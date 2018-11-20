@@ -1,2 +1,2 @@
-# cvpo
-Concepten van Programmaontwerp
+# infomcpd
+Concepts of Program Design
