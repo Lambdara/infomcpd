@@ -1,0 +1,99 @@
+\documentclass[11pt]{article}
+\usepackage[a4paper,margin=2.5cm]{geometry}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[english]{babel}
+\usepackage{microtype}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{mathtools}
+\usepackage{hyperref}
+\usepackage{parskip}
+\usepackage{cleveref}
+\usepackage{float}
+
+\newcommand\RULE[2]{\begin{array}{c} #1 \\ \hline #2 \end{array}}
+\newcommand\SED{\emph{sed}}
+% a judgement
+\newcommand\J[1]{\ensuremath{\text{ #1}}}
+
+% Swap \epsilon and \varepsilon
+\let\oldepsilon\epsilon \let\epsilon\varepsilon \let\varepsilon\oldepsilon
+
+\begin{document}
+
+\section{Program representation}
+
+We specify what programs are valid \SED{} programs by giving a description of the set of valid programs using inference rules.
+This is done using the rules below, where the ``sed'' judgement indicates being a member of this set.
+Note that these rules do not yet define the static semantics, only an abstract representation of \SED{} programs that the semantics operate on.
+Note also that the programs defined by this rule set form a strict subset of the programs specified by the official \SED{} specification\footnote{\url{https://pubs.opengroup.org/onlinepubs/9699919799/utilities/sed.html}}, since, among other things, the \texttt{l}, \texttt{r}, \texttt{w}, \texttt{=} and \texttt{\#} commands are missing, as well as some \texttt{s} flags.
+
+\newcommand\cmd[1]{\ensuremath{\text{\texttt{#1}}}}
+\renewcommand\arg[1]{\ensuremath{\mathit{#1}}}
+
+A program consists of commands:
+\begin{gather*}
+	\RULE{}{\epsilon \J{sed}} \qquad
+	\RULE{p \J{cmd}}{p \J{sed}} \qquad
+	\RULE{p \J{cmd}}{\cmd{!} p \J{sed}} \qquad
+	\RULE{p_1 \J{sed} \qquad p_2 \J{sed}}{p_1 ; p_2 \J{sed}} \qquad
+	\RULE{\arg{addr} \J{addr} \qquad \arg{cmds} \J{sed}}{\arg{addr}\ \{ \arg{cmds} \} \J{sed}}
+\end{gather*}
+Commands that take a label:
+\begin{gather*}
+	\RULE{\arg{label} \J{label}}{: \arg{label} \J{cmd}} \qquad
+	\RULE{\arg{label} \J{label}}{\cmd{b}\ \arg{label} \J{cmd}} \qquad
+	\RULE{\arg{label} \J{label}}{\cmd{t}\ \arg{label} \J{cmd}}
+\end{gather*}
+Basic commands that cannot take an address range:
+\begin{gather*}
+	\RULE{\arg{addr} \J{addr01}}{\arg{addr}\ \cmd{q} \J{cmd}}
+\end{gather*}
+Simple commands (``sc'') take no arguments and take any address:
+\begin{gather*}
+	\RULE{}{\cmd{d} \J{sc}} \quad
+	\RULE{}{\cmd{D} \J{sc}} \quad
+	\RULE{}{\cmd{p} \J{sc}} \quad
+	\RULE{}{\cmd{P} \J{sc}} \quad
+	\RULE{}{\cmd{n} \J{sc}} \quad
+	\RULE{}{\cmd{N} \J{sc}} \quad
+	\RULE{}{\cmd{g} \J{sc}} \quad
+	\RULE{}{\cmd{G} \J{sc}} \quad
+	\RULE{}{\cmd{h} \J{sc}} \quad
+	\RULE{}{\cmd{H} \J{sc}} \quad
+	\RULE{}{\cmd{x} \J{sc}} \\
+	\RULE{\arg{addr} \J{addr} \qquad \arg{cmd} \J{sc}}{\arg{addr}\ \arg{cmd} \J{cmd}}
+\end{gather*}
+Some commands take a text argument:
+\begin{gather*}
+	\RULE{\arg{addr} \J{addr01} \qquad \arg{text} \J{str}}{\arg{addr}\ \cmd{a}\ \arg{text} \J{cmd}} \qquad
+	\RULE{\arg{addr} \J{addr01} \qquad \arg{text} \J{str}}{\arg{addr}\ \cmd{i}\ \arg{text} \J{cmd}} \qquad
+	\RULE{\arg{addr} \J{addr} \qquad \arg{text} \J{str}}{\arg{addr}\ \cmd{c}\ \arg{text} \J{cmd}}
+\end{gather*}
+Finally, the substitution commands:
+\begin{gather*}
+	\RULE{\arg{addr} \J{addr} \qquad \arg{pat} \J{regex} \qquad \arg{repl} \J{str} \qquad \arg{flags} \J{sflags}}{\arg{addr}\ \cmd{s}\ \arg{pat}\ \arg{repl}\ \arg{sflags} \J{cmd}} \\
+	\RULE{\arg{addr} \J{addr} \qquad \arg{pat} \J{ypat} \qquad \arg{repl} \J{str} \qquad |\arg{pat}| = |\arg{repl}|}{\arg{addr}\ \cmd{y}\ \arg{pat}\ \arg{repl} \J{cmd}}
+\end{gather*}
+Where the following auxiliary judgements are used:
+\begin{gather*}
+	\RULE{}{\epsilon \J{str}} \qquad
+	\RULE{c \J{char} \qquad s \J{str}}{c\,s \J{str}} \qquad
+	\RULE{n \in \mathbb{N} \qquad 0 \leq n \leq 255}{n \J{char}} \\
+	\RULE{}{\epsilon \J{addr01}} \qquad
+	\RULE{\arg{addr} \J{addr1}}{\arg{addr} \J{addr01}} \qquad
+	\RULE{\arg{addr} \J{addr01}}{\arg{addr} \J{addr}} \qquad
+	\RULE{a_1 \J{addr1} \qquad a_2 \J{addr1}}{a_1,a_2 \J{addr}} \\
+	\RULE{}{\epsilon \J{sflags}} \qquad
+	\RULE{}{\cmd{g} \J{sflags}} \qquad
+	\RULE{}{\epsilon \J{ypat}} \qquad
+	\RULE{\arg{c} \J{char}}{\arg{c} \J{ypat}} \\
+	\RULE{c_1 \J{char} \qquad c_2 \J{char} \qquad c_1 \not= c_2 \qquad c_1\,s \J{ypat} \qquad c_2\,s \J{ypat}}{c_1\,c_2\,s \J{ypat}}
+\end{gather*}
+The ``label'' judgement defines a set of values on which only an equivalence relation (equality) is required.
+The ``regex'' judgement defines the set of accepted regular expressions, which for now is kept abstract.
+
+
+\end{document}
