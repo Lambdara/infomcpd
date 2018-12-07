@@ -1,0 +1,19 @@
+Background: Consider the motivation and domain. Since we use Haskell, we do not need to consider the language choice.
+Core features: The entirety of sed, excluding commands dealing with files.
+Optional features: Regex, and any features we might want to add ourselves.
+Risk: Focus on core and optional features, also regarding features you might like to add to the language. Consider the difficulties involved with each, and the degree to which you can accurately predict those.
+
+Planning
+Deadlines
+    - Proposal: Finished by December 9th, 00:00, handed in by December 10th, 12:00
+    - Intermediate: Finished by December 20th, 00:00, handed in by December 22nd, 12:00
+    - Final: Finished by December 23rd, 00:00, handed in by December 26th, 12:00
+Division of work
+    - Proposal
+        - Background: Lars
+        - Methodology: Ivo, Mark, Matej, Paul, Tom
+        - Planning: Paul
+        - Proofreading: Matej, Paul
+    - Intermediate & Final
+        - Formalisation: Ivo, Mark, Matej
+        - Implementation: Lars, Paul, Tom
