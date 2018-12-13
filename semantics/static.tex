@@ -1,0 +1,90 @@
+\documentclass[11pt]{article}
+\usepackage[a4paper,margin=2.5cm]{geometry}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[english]{babel}
+\usepackage{microtype}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{mathtools}
+\usepackage{hyperref}
+\usepackage{parskip}
+\usepackage{cleveref}
+\usepackage{float}
+
+\newcommand\RULE[2]{\begin{array}{c} #1 \\ \hline #2 \end{array}}
+\newcommand\SED{\emph{sed}}
+% a judgement
+\newcommand\J[1]{\ensuremath{\text{ #1}}}
+\newcommand\cmd[1]{\ensuremath{\text{\texttt{#1}}}}
+\renewcommand\arg[1]{\ensuremath{\mathit{#1}}}
+
+% Swap \epsilon and \varepsilon
+\let\oldepsilon\epsilon \let\epsilon\varepsilon \let\varepsilon\oldepsilon
+% Swap \emptyset and \varnothing
+\let\oldemptyset\emptyset \let\emptyset\varnothing \let\varnothing\oldemptyset
+
+\begin{document}
+
+\section{Static semantics}
+
+Define the following abstraction for \SED{} programs:
+\begin{gather*}
+	\RULE{}{\epsilon \J{sed}} \qquad
+	\RULE{c \J{cmd} \qquad s \J{sed}}{c\ s \J{sed}} \\
+	\RULE{}{\cmd{b}\ \arg{\ell} \J{cmd}} \qquad
+	\RULE{}{\cmd{:}\ \arg{\ell} \J{cmd}} \qquad
+	\RULE{s \J{sed}}{\cmd{\{}\ s\ \cmd{\}} \J{cmd}} \qquad
+	\RULE{\arg{pat} \J{ypat} \qquad \arg{repl} \J{str}}{\cmd{y}\ \arg{pat}\ \arg{repl} \J{cmd}} \qquad
+	\RULE{}{\cmd{C} \J{cmd}}
+\end{gather*}
+where \cmd{:}, \cmd{\{}\ldots\!\cmd{\}} and \cmd{y} (for `ypat' and `str', see the grammar) model their counterparts in the actual \SED{} grammar, \cmd{b} models all label-referencing commands (\cmd{b} and \cmd{t}), and \cmd{C} is any other command.
+We abstract over addresses; these are not relevant in the static checking.
+
+\textbf{TODO: Need to add rules that prove the above judgements for the relevant commands in the actual grammar, so that the ``intuitive'' description above is unnecessary (and only useful for auxiliary description). Then `cmd' and `sed' need to be renamed in this document so as to not conflict with the judgements in the full grammar.}
+
+We say a \SED{} program is correct according to the static semantics if the `ok' judgement can be proven of it.
+This is true if it is both \textbf{l}abel-\textbf{c}orrect and \textbf{y}-\textbf{c}orrect:
+\begin{gather*}
+	\RULE{s \J{sed} \qquad s \J{lc} \qquad s \J{yc}}{s \J{ok}}
+\end{gather*}
+A program is label-correct if it refers only to labels defined elsewhere in the program.
+\begin{gather*}
+	\RULE{s \J{labels}\ L \qquad L \vdash s \J{lc'}}{s \J{lc}}
+\end{gather*}
+This we do by first collecting all the labels:
+\begin{gather*}
+	\RULE{}{\epsilon \J{labels}\ \emptyset} \qquad
+	\RULE{s \J{labels}\ L \qquad \ell \not\in L}{(\cmd{:}\ \ell)\ s \J{labels}\ \{\ell\} \cup L} \qquad
+	\RULE{s_1 \J{labels}\ L_1 \qquad s \J{labels}\ L}{\cmd{\{} s_1 \cmd{\}}\ s \J{labels}\ L_1 \cup L} \\
+%
+	\RULE{s \J{labels}\ L}{(\cmd{b}\ \ell)\ s \J{labels}\ L} \qquad
+	\RULE{s \J{labels}\ L}{(\cmd{y}\ \arg{pat}\ \arg{repl})\ s \J{labels}\ L} \qquad
+	\RULE{s \J{labels}\ L}{\cmd{C}\ s \J{labels}\ L}
+\end{gather*}
+Then, we verify that all label-referencing instructions only refer to labels that we have collected:
+\textbf{TODO: Maybe write this as a rule on bare commands, and then specify that a program is correct if all its commands are correct (only 2 rules)? This is a net increase of 1 rule, but a decrease in complexity (and increase in focus) of the rules that do the work.}
+\begin{gather*}
+	\RULE{}{L \vdash \epsilon \J{lc'}} \qquad
+	\RULE{\ell \in L \qquad L \vdash s \J{lc'}}{L \vdash (\cmd{b}\ \ell)\ s \J{lc'}} \qquad
+	\RULE{L \vdash s_1 \J{lc'} \qquad L \vdash s \J{lc'}}{L \vdash \cmd{\{} s_1 \cmd{\}}\ s \J{lc'}} \\
+%
+	\RULE{L \vdash s \J{lc'}}{L \vdash (\cmd{:}\ \ell)\ s \J{lc'}} \qquad
+	\RULE{L \vdash s \J{lc'}}{L \vdash (\cmd{y}\ \arg{pat}\ \arg{repl})\ s \J{lc'}} \qquad
+	\RULE{L \vdash s \J{lc'}}{L \vdash \cmd{C}\ s \J{lc'}}
+\end{gather*}
+A program is y-correct if for each \cmd{y}-instruction in the program, the pattern and replacement have equal length:
+\textbf{TODO: Same as above, maybe focus these rules on commands only, and then map the rules over programs.}
+\begin{gather*}
+	\RULE{}{\epsilon \J{yc}} \qquad
+	\RULE{|\arg{pat}| = |\arg{repl}| \qquad s \J{yc}}{(\cmd{y}\ \arg{pat}\ \arg{repl})\ s \J{yc}} \qquad
+	\RULE{s_1 \J{yc} \qquad s \J{yc}}{\cmd{\{} s_1 \cmd{\}}\ s \J{yc}} \\
+%
+	\RULE{s \J{yc}}{(\cmd{b}\ \ell)\ s \J{yc}} \qquad
+	\RULE{s \J{yc}}{(\cmd{:}\ \ell)\ s \J{yc}} \qquad
+	\RULE{s \J{yc}}{\cmd{C}\ s \J{yc}}
+\end{gather*}
+
+
+\end{document}
