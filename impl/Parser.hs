@@ -129,8 +129,10 @@ pAddressNot = do
 pText :: Parser String
 pText = do
     pWhitespace
-    lns <- many $ string "\\\n" >> manyTill anyChar (newline <|> char '\\')
-    void $ lookAhead newline
+    let intermediateTerm = void newline <|> void (char '\\') <|> eof
+        finalTerm = void newline <|> eof
+    lns <- many $ string "\\\n" >> manyTill anyChar (lookAhead intermediateTerm)
+    void $ lookAhead finalTerm
     return $ intercalate "\n" lns
 
 pSArgs :: Parser (Regex, String)
