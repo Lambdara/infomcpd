@@ -64,7 +64,6 @@ This we do by first collecting all the labels:
 	\RULE{s \J{labels}\ L}{\cmd{C}\ s \J{labels}\ L}
 \end{gather*}
 Then, we verify that all label-referencing instructions only refer to labels that we have collected:
-\textbf{TODO: Maybe write this as a rule on bare commands, and then specify that a program is correct if all its commands are correct (only 2 rules)? This is a net increase of 1 rule, but a decrease in complexity (and increase in focus) of the rules that do the work.}
 \begin{gather*}
 	\RULE{}{L \vdash \epsilon \J{lc'}} \qquad
 	\RULE{\ell \in L \qquad L \vdash s \J{lc'}}{L \vdash (\cmd{b}\ \ell)\ s \J{lc'}} \qquad
@@ -75,7 +74,6 @@ Then, we verify that all label-referencing instructions only refer to labels tha
 	\RULE{L \vdash s \J{lc'}}{L \vdash \cmd{C}\ s \J{lc'}}
 \end{gather*}
 A program is y-correct if for each \cmd{y}-instruction in the program, the pattern and replacement have equal length:
-\textbf{TODO: Same as above, maybe focus these rules on commands only, and then map the rules over programs.}
 \begin{gather*}
 	\RULE{}{\epsilon \J{yc}} \qquad
 	\RULE{|\arg{pat}| = |\arg{repl}| \qquad s \J{yc}}{(\cmd{y}\ \arg{pat}\ \arg{repl})\ s \J{yc}} \qquad
