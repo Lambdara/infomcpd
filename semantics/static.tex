@@ -73,15 +73,19 @@ Then, we verify that all label-referencing instructions only refer to labels tha
 	\RULE{L \vdash s \J{lc'}}{L \vdash (\cmd{y}\ \arg{pat}\ \arg{repl})\ s \J{lc'}} \qquad
 	\RULE{L \vdash s \J{lc'}}{L \vdash \cmd{C}\ s \J{lc'}}
 \end{gather*}
-A program is y-correct if for each \cmd{y}-instruction in the program, the pattern and replacement have equal length:
+A program is y-correct if for each \cmd{y}-instruction in the program, the pattern and replacement have equal length and the pattern does not contain duplicate characters:
 \begin{gather*}
 	\RULE{}{\epsilon \J{yc}} \qquad
-	\RULE{|\arg{pat}| = |\arg{repl}| \qquad s \J{yc}}{(\cmd{y}\ \arg{pat}\ \arg{repl})\ s \J{yc}} \qquad
+	\RULE{|\arg{pat}| = |\arg{repl}| \qquad \arg{pat} \J{nodup} \qquad s \J{yc}}{(\cmd{y}\ \arg{pat}\ \arg{repl})\ s \J{yc}} \qquad
 	\RULE{s_1 \J{yc} \qquad s \J{yc}}{\cmd{\{} s_1 \cmd{\}}\ s \J{yc}} \\
 %
 	\RULE{s \J{yc}}{(\cmd{b}\ \ell)\ s \J{yc}} \qquad
 	\RULE{s \J{yc}}{(\cmd{:}\ \ell)\ s \J{yc}} \qquad
-	\RULE{s \J{yc}}{\cmd{C}\ s \J{yc}}
+	\RULE{s \J{yc}}{\cmd{C}\ s \J{yc}} \\
+	\RULE{}{\epsilon \J{nodup}} \qquad
+	\RULE{c\ s \J{str} \qquad c \J{notin}\ s \qquad s \J{nodup}}{c\ s \J{nodup}} \\
+	\RULE{c \J{char}}{c \J{notin}\ \epsilon} \qquad
+	\RULE{c \J{char} \qquad c'\ s \J{str} \qquad c \not= c' \qquad c \J{notin}\ s}{c \J{notin}\ c'\ s}
 \end{gather*}
 
 
