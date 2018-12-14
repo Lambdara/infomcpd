@@ -10,5 +10,5 @@ executable            impl
     main-is:          Main.hs
     default-language: Haskell2010
     ghc-options:      -Wall -O3
-    build-depends:    base >= 4 && < 5, containers, parsec
+    build-depends:    base >= 4 && < 5, containers, directory, parsec
     other-modules:    Parser, AST
