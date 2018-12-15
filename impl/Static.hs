@@ -35,8 +35,5 @@ getLabels (Program (Label label:cmds)) = do
   if elem label rest
     then Nothing
     else return (label:rest)
-getLabels (Program (Block _ cmds1:cmds2)) = do
-  blockLabels <- getLabels (Program cmds1)
-  rest <- getLabels (Program cmds2)
-  return (blockLabels ++ rest)
+getLabels (Program (Block _ cmds1:cmds2)) = getLabels (Program (cmds1 ++ cmds2))
 getLabels (Program (_:cmds)) = getLabels (Program cmds)
