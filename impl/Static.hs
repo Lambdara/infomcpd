@@ -9,8 +9,10 @@ yCorrect :: Program -> Bool
 yCorrect = const True
 
 labelCorrect :: Program -> Bool
-labelCorrect s = labelCorrect' s l
-  where l = getLabels s
+labelCorrect s =
+  case getLabels s of
+    Nothing -> False
+    Just l -> labelCorrect' s l
 
 labelCorrect' :: Program -> [Label] -> Bool
 labelCorrect' (Program []) _ = True
@@ -23,8 +25,18 @@ labelCorrect' (Program (Block _ cmds1:cmds2)) labels =
   labelCorrect' (Program cmds2) labels
 labelCorrect' (Program (_:cmds)) labels = labelCorrect' (Program cmds) labels
 
-getLabels :: Program -> [Label]
-getLabels (Program []) = []
-getLabels (Program (Label label:cmds)) = label:getLabels (Program cmds)
-getLabels (Program (Block _ cmds1:cmds2)) = getLabels (Program cmds1) ++ getLabels (Program cmds2)
+-- Returns Just a list of labels if no errors occur
+-- Returns Nothing if an error occurs
+-- Currently the only possible error is a duplicate label
+getLabels :: Program -> Maybe [Label]
+getLabels (Program []) = Just []
+getLabels (Program (Label label:cmds)) = do
+  rest <- getLabels (Program cmds)
+  if elem label rest
+    then Nothing
+    else return (label:rest)
+getLabels (Program (Block _ cmds1:cmds2)) = do
+  blockLabels <- getLabels (Program cmds1)
+  rest <- getLabels (Program cmds2)
+  return (blockLabels ++ rest)
 getLabels (Program (_:cmds)) = getLabels (Program cmds)
