@@ -57,7 +57,7 @@ This we do by first collecting all the labels:
 \begin{gather*}
 	\RULE{}{\epsilon \J{labels}\ \emptyset} \qquad
 	\RULE{s \J{labels}\ L \qquad \ell \not\in L}{(\cmd{:}\ \ell)\ s \J{labels}\ \{\ell\} \cup L} \qquad
-	\RULE{s_1 \J{labels}\ L_1 \qquad s \J{labels}\ L}{\cmd{\{} s_1 \cmd{\}}\ s \J{labels}\ L_1 \cup L} \\
+	\RULE{s_1\ s \J{labels}\ L}{\cmd{\{} s_1 \cmd{\}}\ s \J{labels}\ L} \\
 %
 	\RULE{s \J{labels}\ L}{(\cmd{b}\ \ell)\ s \J{labels}\ L} \qquad
 	\RULE{s \J{labels}\ L}{(\cmd{y}\ \arg{pat}\ \arg{repl})\ s \J{labels}\ L} \qquad
