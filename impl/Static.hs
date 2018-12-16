@@ -6,7 +6,18 @@ ok program = labelCorrect program && yCorrect program
 
 -- Placeholder
 yCorrect :: Program -> Bool
-yCorrect = const True
+yCorrect (Program []) = True
+yCorrect (Program (Trans _ pat repl:cmds)) = length pat == length repl &&
+                                             noDuplicates pat &&
+                                             yCorrect (Program cmds)
+yCorrect (Program (Block _ cmds1:cmds2)) = yCorrect (Program cmds1) &&
+                                           yCorrect (Program cmds2)
+yCorrect (Program (_:cmds)) = yCorrect (Program cmds)
+
+noDuplicates :: String -> Bool
+noDuplicates "" = True
+noDuplicates (c:cs) = notElem c cs &&
+                      noDuplicates cs
 
 labelCorrect :: Program -> Bool
 labelCorrect s =
