@@ -34,6 +34,6 @@ main = do
         ["test"] -> do
             let path = "../tests/"
             fnames <- listDirectory path
-            mapM_ runFile $ map (path ++) fnames
+            sequence_ $ intersperse (putStrLn "") $ map runFile $ map (path ++) fnames
 
         _ -> die usage
