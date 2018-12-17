@@ -6,6 +6,7 @@ import System.Environment
 import System.Exit
 
 import Parser
+import qualified Static as Static
 
 
 runFile :: String -> IO ()
@@ -16,6 +17,7 @@ runFile fname = do
         Right prog -> return prog
 
     print prog
+    print $ Static.ok prog
 
 
 usage :: String
