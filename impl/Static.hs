@@ -1,4 +1,4 @@
-module Static where
+module Static(ok) where
 import AST
 
 ok :: Program -> Bool
