@@ -32,7 +32,7 @@ main = do
         ["sed", fname] -> runFile fname
 
         ["test"] -> do
-            let path = "../tests/"
+            let path = "tests/"
             fnames <- listDirectory path
             sequence_ $ intersperse (putStrLn "") $ map runFile $ map (path ++) fnames
 
