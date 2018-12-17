@@ -1,4 +1,4 @@
-module Parser where
+module Parser(parseProgram) where
 
 import Control.Monad
 import Data.Char
@@ -12,8 +12,11 @@ import AST
 
 type Parser = Parsec String ()
 
-parseProgram :: Parser Program
-parseProgram = do
+parseProgram :: String -> String -> Either ParseError Program
+parseProgram fname source = parse pProgram fname source
+
+pProgram :: Parser Program
+pProgram = do
     cmds <- catMaybes <$> pCmd `sepBy` pWhiteSeparator
     pWhitespace
     eof
@@ -107,13 +110,6 @@ pAddr2 = choice
                 , do b <- pAddressNot
                      return $ Addr2_1 b base ]
     , return NoAddr2 ]
-
-pAddr1 :: Parser Addr1
-pAddr1 = choice
-    [ do base <- pBaseAddr
-         b <- pAddressNot
-         return $ Addr1 b base
-    , return NoAddr1 ]
 
 pBaseAddr :: Parser BaseAddr
 pBaseAddr = choice
