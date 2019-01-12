@@ -171,6 +171,7 @@ addrmatch(S, lnnum(N)) :- lnnum(S, N).
 addrmatch(S, not(lnnum(N))) :- \+ lnnum(S, N).
 addrmatch(S, eof) :- noinput(S).
 addrmatch(S, not(eof)) :- haveinput(S).
+addrmatch(S, a2(lnnum(N), lnnum(M))) :- lnnum(S, K), N =< K, K =< M.
 
 perform(S, IP, A, S1) :- addrtag(A, Addr, Cmd), addrmatch(S, Addr), perform(S, IP, Cmd, S1).
 perform(S, IP, A, S1) :- addrtag(A, Addr, _), \+ addrmatch(S, Addr), incrIP(IP, IPp), execcmd(S, IPp, S1).
@@ -229,3 +230,5 @@ splitline_lenient(Text, Line, Rest) :- string_codes(Text, TextC), splitline_c(Te
 splitline_c([], [], []).
 splitline_c([10 | Rest], [], Rest) :- !.
 splitline_c([C | Text], [C | Line], Rest) :- splitline_c(Text, Line, Rest).
+
+nonewline(Str) :- string_codes(Str, Codes), \+ member(10, Codes).
