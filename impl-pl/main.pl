@@ -77,15 +77,14 @@ can_take_addr1(Cmd) :- can_take_addr2(Cmd).
 ss_abstract([], []).
 ss_abstract([C | Cs], [A | As]) :- ss_abstract_c(C, A), ss_abstract(Cs, As).
 
-ss_abstract_c_usual(b(_), b(eof)).
-ss_abstract_c_usual(b(_, Label), b(Label)).
-ss_abstract_c_usual(t(_), b(eof)).
-ss_abstract_c_usual(t(_, Label), b(Label)).
-ss_abstract_c_usual(label(Label), label(Label)).
-ss_abstract_c_usual(block(_, Cmds), block(Cmds)).
-ss_abstract_c_usual(y(_, P, R), y(P, R)).
-ss_abstract_c(Cmd, Out) :- ss_abstract_c_usual(Cmd, Out), !.
-ss_abstract_c(_, c).
+ss_abstract_c(b(_), b(eof)).
+ss_abstract_c(b(_, Label), b(Label)).
+ss_abstract_c(t(_), b(eof)).
+ss_abstract_c(t(_, Label), b(Label)).
+ss_abstract_c(label(Label), label(Label)).
+ss_abstract_c(block(_, Cmds), block(Cmds)).
+ss_abstract_c(y(_, P, R), y(P, R)).
+ss_abstract_c(Cmd, c) :- \+ member(Cmd, [b(_), b(_, _), t(_), t(_, _), label(_), block(_, _), y(_, _, _)]).
 
 static_sem(Sed) :- ss_abstract(Sed, Abs), ss_ok(Abs).
 ss_ok(S) :- ss_lc(S), ss_yc(S).
@@ -228,7 +227,7 @@ outrange_c([_ | C], [N | IP]) :- N > 0, M is N - 1, outrange_c(C, [M | IP]).
 splitline(Text, Line, Rest) :- string_length(Text, N), N > 0, splitline_lenient(Text, Line, Rest).
 splitline_lenient(Text, Line, Rest) :- string_codes(Text, TextC), splitline_c(TextC, LineC, RestC), string_codes(Line, LineC), string_codes(Rest, RestC).
 splitline_c([], [], []).
-splitline_c([10 | Rest], [], Rest) :- !.
-splitline_c([C | Text], [C | Line], Rest) :- splitline_c(Text, Line, Rest).
+splitline_c([10 | Rest], [], Rest).
+splitline_c([C | Text], [C | Line], Rest) :- C \= 10, splitline_c(Text, Line, Rest).
 
 nonewline(Str) :- string_codes(Str, Codes), \+ member(10, Codes).
