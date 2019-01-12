@@ -1,5 +1,5 @@
 is_sed([]).
-is_sed([C | Cs]) :- is_cmd(C), is_sed(Cs).
+is_sed([C | S]) :- is_cmd(C), is_sed(S).
 
 is_addr2(not(A)) :- is_addr2n(A).
 is_addr2(A) :- is_addr2n(A).
@@ -114,6 +114,7 @@ nodup([C | Cs]) :- \+ member(C, Cs), nodup(Cs).
 
 
 newstate(C, I, L, N, state(C, I, "", "", "", "", L, false, N, 0)).
+%% left code 1, left input 1, left output 1, left pat 1, left hold 1, left aq 1, left labels 1, left tflag 1, left nflag 1, left lnnum 1
 code(  state(C, _, _, _, _, _, _, _, _, _), C).
 input( state(_, I, _, _, _, _, _, _, _, _), I).
 output(state(_, _, O, _, _, _, _, _, _, _), O).
@@ -124,6 +125,7 @@ labels(state(_, _, _, _, _, _, L, _, _, _), L).
 tflag( state(_, _, _, _, _, _, _, T, _, _), T).
 nflag( state(_, _, _, _, _, _, _, _, N, _), N).
 lnnum( state(_, _, _, _, _, _, _, _, _, K), K).
+%% left setcode 2, left setinput 2, left setoutput 2, left setpat 2, left sethold 2, left setaq 2, left setlabels 2, left settflag 2, left setnflag 2, left setlnnum 2
 setcode(  state(_, I, O, P, H, Q, L, T, N, K), C, state(C, I, O, P, H, Q, L, T, N, K)).
 setinput( state(C, _, O, P, H, Q, L, T, N, K), I, state(C, I, O, P, H, Q, L, T, N, K)).
 setoutput(state(C, I, _, P, H, Q, L, T, N, K), O, state(C, I, O, P, H, Q, L, T, N, K)).
@@ -146,8 +148,7 @@ findlabelsp([label(Lab) | C], IP, [pair(Lab, IP) | L]) :- incrIP(IP, IPp), findl
 findlabelsp([block(C2) | C], IP, LL) :- findlabelsp(C2, [0 | IP], L2), incrIP(IP, IPp), findlabelsp(C, IPp, L), append(L2, L, LL).
 findlabelsp([Cmd | C], IP, L) :- \+ member(Cmd, [label(_), block(_)]), incrIP(IP, IPp), findlabelsp(C, IPp, L).
 
-nextcycle(S, _) :- write("-- CYCLE --"), nl, writeq(S), nl, fail.
-nextcycle(S, S) :- noinput(S).
+nextcycle(S, S) :- write("-- CYCLE --"), nl, writeq(S), nl, noinput(S).
 nextcycle(S, S3) :- nextinput(S, S1, I), setpat(S1, I, S2), execcmd(S2, [0], S3).
 
 endcycle(S, S2) :- endcycle_patwrite(S, S1), nextcycle(S1, S2).
@@ -167,13 +168,18 @@ addrtag(addr2(Addr, Cmd), Addr, Cmd).
 addrtag(addr1(Addr, Cmd), Addr, Cmd).
 
 addrmatch(S, lnnum(N)) :- lnnum(S, N).
-addrmatch(S, not(lnnum(N))) :- \+ lnnum(S, N).
+addrmatch(S, not(lnnum(N))) :- lnnum(S, M), N \= M.
 addrmatch(S, eof) :- noinput(S).
 addrmatch(S, not(eof)) :- haveinput(S).
 addrmatch(S, a2(lnnum(N), lnnum(M))) :- lnnum(S, K), N =< K, K =< M.
 
+addrmatch_not(S, not(A)) :- addrmatch(S, A).
+addrmatch_not(S, lnnum(N)) :- addrmatch(S, not(lnnum(N))).
+addrmatch_not(S, eof) :- addrmatch(S, not(eof)).
+addrmatch_not(S, a2(A, B)) :- addrmatch(S, not(a2(A, B))).
+
 perform(S, IP, A, S1) :- addrtag(A, Addr, Cmd), addrmatch(S, Addr), perform(S, IP, Cmd, S1).
-perform(S, IP, A, S1) :- addrtag(A, Addr, _), \+ addrmatch(S, Addr), incrIP(IP, IPp), execcmd(S, IPp, S1).
+perform(S, IP, A, S1) :- addrtag(A, Addr, _), addrmatch_not(S, Addr), incrIP(IP, IPp), execcmd(S, IPp, S1).
 
 perform(S, IP, a(Text), S2) :- aq(S, AQ), string_concat(AQ, Text, AT), string_concat(AT, "\n", ATN), setaq(S, ATN, S1), incrIP(IP, IPp), execcmd(S1, IPp, S2).
 perform(S, _, b(Lab), S1) :- lookuplabel(S, Lab, IPp), execcmd(S, IPp, S1).
