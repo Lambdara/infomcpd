@@ -202,6 +202,7 @@ perform(S, IP, x, S3) :- pat(S, P), hold(S, H), setpat(S, H, S1), sethold(S1, P,
 % TODO: y
 perform(S, IP, label(_), S1) :- incrIP(IP, IPp), execcmd(S, IPp, S1).
 perform(S, IP, lnnum, S2) :- lnnum(S, K), number_string(K, Str), linetooutput(S, Str, S1), incrIP(IP, IPp), execcmd(S1, IPp, S2).
+perform(S, IP, block(_), S1) :- execcmd(S, [0 | IP], S1).
 
 linetooutput(S, Line, S1) :- output(S, O), string_concat(O, Line, OL), string_concat(OL, "\n", OLN), setoutput(S, OLN, S1).
 
@@ -213,12 +214,14 @@ flushaq(S, S2) :- output(S, O), aq(S, AQ), string_concat(O, AQ, OA), setoutput(S
 
 findcmd(S, IP, Cmd) :- code(S, C), reverse(IP, IPr), findcmd_c(C, IPr, Cmd).
 findcmd_c([Cmd | _], [0], Cmd).
-findcmd_c([Block | _], [0 | IP], Cmd) :- findcmd_c(Block, IP, Cmd).
+findcmd_c([BlockA | _], [0 | IP], Cmd) :- addrtag(BlockA, _, block(Cmds)), findcmd_c(Cmds, IP, Cmd).
+findcmd_c([block(Cmds) | _], [0 | IP], Cmd) :- findcmd_c(Cmds, IP, Cmd).
 findcmd_c([_ | C], [N | IP], Cmd) :- N > 0, M is N - 1, findcmd_c(C, [M | IP], Cmd).
 
 outrange(S, IP) :- code(S, C), reverse(IP, IPr), outrange_c(C, IPr).
 outrange_c([], _).
-outrange_c([Block | _], [0 | IP]) :- outrange_c(Block, IP).
+outrange_c([BlockA | _], [0 | IP]) :- addrtag(BlockA, _, block(Cmds)), outrange_c(Cmds, IP).
+outrange_c([block(Cmds) | _], [0 | IP]) :- outrange_c(block(Cmds), IP).
 outrange_c([_ | C], [N | IP]) :- N > 0, M is N - 1, outrange_c(C, [M | IP]).
 
 splitline(Text, Line, Rest) :- string_length(Text, N), N > 0, splitline_lenient(Text, Line, Rest).
