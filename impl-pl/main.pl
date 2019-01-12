@@ -1,13 +1,17 @@
 is_sed([]).
 is_sed([C | Cs]) :- is_cmd(C), is_sed(Cs).
 
-is_addr2(addr2(A, B)) :- is_addr1f(A), is_addr1f(B).
-is_addr2(A) :- is_addr1(A).
-is_addr1(A) :- is_addr1f(A).
-is_addr1(none).
-is_addr1f(lnnum(N)) :- number(N).
-is_addr1f(eof).
-is_addr1f(Regex) :- is_regex(Regex).
+is_addr2(not(A)) :- is_addr2n(A).
+is_addr2(A) :- is_addr2n(A).
+is_addr1(not(A)) :- is_addr1n(A).
+is_addr1(A) :- is_addr1n(A).
+is_addr2n(a2(A, B)) :- is_addrsimple(A), is_addrsimple(B).
+is_addr2n(A) :- is_addr1n(A).
+is_addr1n(A) :- is_addrsimple(A).
+is_addr1n(none).
+is_addrsimple(lnnum(N)) :- number(N).
+is_addrsimple(eof).
+is_addrsimple(Regex) :- is_regex(Regex).
 
 is_text(Text) :- string(Text).
 is_label(Label) :- string(Label).
@@ -158,8 +162,15 @@ execcmd(S, [IP], S1) :- outrange(S, [IP]), endcycle(S, S1).
 
 exitblock([_ | [N | IP]], [M | IP]) :- M is N + 1.
 
+addrtag(not(addr2(Addr, Cmd)), not(Addr), Cmd).
+addrtag(not(addr1(Addr, Cmd)), not(Addr), Cmd).
 addrtag(addr2(Addr, Cmd), Addr, Cmd).
 addrtag(addr1(Addr, Cmd), Addr, Cmd).
+
+addrmatch(S, lnnum(N)) :- lnnum(S, N).
+addrmatch(S, not(lnnum(N))) :- \+ lnnum(S, N).
+addrmatch(S, eof) :- noinput(S).
+addrmatch(S, not(eof)) :- haveinput(S).
 
 perform(S, IP, A, S1) :- addrtag(A, Addr, Cmd), addrmatch(S, Addr), perform(S, IP, Cmd, S1).
 perform(S, IP, A, S1) :- addrtag(A, Addr, _), \+ addrmatch(S, Addr), incrIP(IP, IPp), execcmd(S, IPp, S1).
@@ -195,6 +206,7 @@ perform(S, IP, lnnum, S2) :- lnnum(S, K), number_string(K, Str), linetooutput(S,
 linetooutput(S, Line, S1) :- output(S, O), string_concat(O, Line, OL), string_concat(OL, "\n", OLN), setoutput(S, OLN, S1).
 
 noinput(S) :- input(S, "").
+haveinput(S) :- input(S, I), string_length(I, L), L > 0.
 nextinput(S, S3, I) :- flushaq(S, S1), input(S1, Input), splitline(Input, I, Rest), setinput(S1, Rest, S2), incrLnnum(S2, S3).
 
 flushaq(S, S2) :- output(S, O), aq(S, AQ), string_concat(O, AQ, OA), setoutput(S, OA, S1), setaq(S1, "", S2).
