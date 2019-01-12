@@ -10,8 +10,10 @@ display (Rules rs) = intercalate "\n\n" (map displayR rs)
 displayR :: Rule -> String
 displayR (Rule name reqs concl) =
     "\\[ \\RULE[" ++ safeText name ++ "]"
-        ++ "{" ++ intercalate " \\qquad " (map displayJ reqs) ++ "}"
+        ++ "{" ++ intercalate " \\qquad " (map displayJ (filter (not . isEmpty) reqs)) ++ "}"
         ++ "{" ++ displayJ concl ++ "} \\]"
+  where
+    isEmpty (Judge l) = null l
 
 displayJ :: Judge -> String
 displayJ (Judge items) = intercalate "\\ " (map displayF items)

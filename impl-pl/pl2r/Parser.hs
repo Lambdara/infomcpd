@@ -95,7 +95,7 @@ pVar = try $ do
     pWhiteComment
     Var <$> ((:) <$> initVarChar <*> many furtherVarChar)
   where
-    initVarChar = (oneOf ['A'..'Z'] <?> "capital letter") <|> char '_'
+    initVarChar = upper <|> char '_'
     furtherVarChar = letter <|> char '_' <|> digit
 
 pPredExpr :: Parser PredExpr
@@ -124,7 +124,7 @@ pExpr = buildExpressionParser opTable (Term <$> pTerm)
 pName :: Parser Name
 pName = try $ pWhiteComment >> ((:) <$> initNameChar <*> many furtherNameChar)
   where
-    initNameChar = (oneOf ['a'..'z'] <?> "lower-case letter") <|> char '_'
+    initNameChar = lower <|> char '_'
     furtherNameChar = letter <|> char '_' <|> digit
 
 symbol :: String -> Parser ()
