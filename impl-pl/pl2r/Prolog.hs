@@ -1,4 +1,4 @@
-module AST where
+module Prolog where
 
 -- An AST for a Prolog program.
 
@@ -7,19 +7,17 @@ type Name = String
 data Program = Program [Stmt]
   deriving (Eq, Show)
 
-data Stmt = SFact Term RHS
-          | SAnnot String
+data Stmt = Fact Term [PredExpr]
+          | Annot String
   deriving (Eq, Show)
 
-data RHS = Conj [RHS]
-         | Disj [RHS]
-         | Not RHS
-         | Is Name Expr
-         | Expr Expr
+data PredExpr = Is Name Expr
+              | Expr Expr
+              | Not Expr
   deriving (Eq, Show)
 
 data Expr = Binop Binop Expr Expr
-          | ETerm Term
+          | Term Term
   deriving (Eq, Show)
 
 data Binop = BPlus | BMinus | BEq | BNeq | BGeq | BLeq | BGt | BLt
@@ -31,4 +29,5 @@ data Term = Pred Name [Term]
           | LitNum Int
           | LitStr String
           | Var Name
+          | TExpr Expr
   deriving (Eq, Show)

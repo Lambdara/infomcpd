@@ -10,6 +10,5 @@ executable            pl2r
     main-is:          Main.hs
     default-language: Haskell2010
     ghc-options:      -Wall -O3
-    build-depends:    base >= 4 && < 5, containers, parsec
-    other-modules:    Parser, AST
-    
+    build-depends:    base >= 4 && < 5, containers, parsec, directory, process
+    other-modules:    Display, Parser, Process, Prolog, Rules, ToRules

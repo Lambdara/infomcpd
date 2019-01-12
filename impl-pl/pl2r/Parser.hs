@@ -6,7 +6,7 @@ import Data.Char
 import Text.Parsec
 import Text.Parsec.Expr
 
-import AST
+import Prolog
 
 
 type Parser = Parsec String ()
@@ -22,20 +22,20 @@ pProgram = do
     return prog
 
 pStmt :: Parser Stmt
-pStmt = pSAnnot <|> pSFact
+pStmt = pAnnot <|> pFact
 
-pSAnnot :: Parser Stmt
-pSAnnot = do
+pAnnot :: Parser Stmt
+pAnnot = do
     try $ pWhitespace >> void (string "%%")
     pWhitespace
-    SAnnot <$> manyTill anyChar (void (char '\n') <|> eof)
+    Annot <$> manyTill anyChar (void (char '\n') <|> eof)
 
-pSFact :: Parser Stmt
-pSFact = do
+pFact :: Parser Stmt
+pFact = do
     term <- pTerm
-    expr <- (symbol ":-" >> pRHS) <|> return (Conj [])
+    expr <- (symbol ":-" >> sepBy pPredExpr (symbol ",")) <|> return []
     symbol "."
-    return $ SFact term expr
+    return $ Fact term expr
 
 pTerm :: Parser Term
 pTerm = pPred <|> pList <|> pLitNum <|> pLitStr <|> pVar
@@ -98,27 +98,17 @@ pVar = try $ do
     initVarChar = (oneOf ['A'..'Z'] <?> "capital letter") <|> char '_'
     furtherVarChar = letter <|> char '_' <|> digit
 
-pRHS :: Parser RHS
-pRHS = simplify <$> pDisj
+pPredExpr :: Parser PredExpr
+pPredExpr = pIs <|> pNot <|> (Expr <$> pExpr)
   where
-    pDisj = Disj <$> sepBy pConj (symbol ";")
-    pConj = Conj <$> sepBy pENot (symbol ",")
-    pENot = (symbol "\\+" >> (Not <$> pRHSBase)) <|> pRHSBase
-    pRHSBase = pIs <|> (Expr <$> pExpr)
     pIs = do
-        name <- try (pName <* symbol "is")
+        Var name <- try (pVar <* symbol "is")
         expr <- pExpr
         return $ Is name expr
-
-    simplify :: RHS -> RHS
-    simplify (Disj [e]) = simplify e
-    simplify (Disj l) = Disj (map simplify l)
-    simplify (Conj [e]) = simplify e
-    simplify (Conj l) = Conj (map simplify l)
-    simplify e = e
+    pNot = symbol "\\+" >> (Not <$> pExpr)
 
 pExpr :: Parser Expr
-pExpr = buildExpressionParser opTable (ETerm <$> pTerm)
+pExpr = buildExpressionParser opTable (Term <$> pTerm)
   where
     opTable = [[Infix (pBinop "+" BPlus) AssocLeft,
                 Infix (pBinop "-" BMinus) AssocLeft],
@@ -134,8 +124,8 @@ pExpr = buildExpressionParser opTable (ETerm <$> pTerm)
 pName :: Parser Name
 pName = try $ pWhiteComment >> ((:) <$> initNameChar <*> many furtherNameChar)
   where
-    initNameChar = letter <|> char '_'
-    furtherNameChar = initNameChar <|> digit
+    initNameChar = (oneOf ['a'..'z'] <?> "lower-case letter") <|> char '_'
+    furtherNameChar = letter <|> char '_' <|> digit
 
 symbol :: String -> Parser ()
 symbol s = do

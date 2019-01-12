@@ -1,0 +1,38 @@
+\documentclass[11pt]{article}
+\usepackage[a4paper,margin=2.5cm]{geometry}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[english]{babel}
+\usepackage{microtype}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{mathtools}
+\usepackage{hyperref}
+\usepackage{parskip}
+% \usepackage{graphicx}
+\usepackage{xifthen}
+% \usepackage{wasysym}
+% \usepackage{verbatim}
+% \usepackage{changepage}
+\usepackage{color}
+% \usepackage{cleveref}
+\usepackage{makecell}
+% \usepackage{tikz}
+% \usetikzlibrary{arrows.meta}
+% \usepackage{float}
+% \usepackage{csquotes}
+% \usepackage{listings}
+
+\newcommand\SED{\emph{sed}}
+
+\newcommand\padded[1]{\makecell[c]{~\\[-6pt]\hspace{10px} #1 \hspace{10px}~\\[-6pt]~}}
+\newcommand{\ifempty}[3]{\ifthenelse{\isempty{#1}}{#2}{#3}}
+
+\newcommand\RULE[3][]{\begin{array}{c} #2 \\ \hline #3 \end{array}\ifempty{#1}{}{\text{\ \ #1}}}
+\newcommand\J[1]{\ensuremath{\text{#1}\ }}
+\newcommand\cmd[1]{\ensuremath{\text{\texttt{#1}}\ }}
+\renewcommand\arg[1]{\ensuremath{\mathit{#1}\ }}
+
+\begin{document}
+
