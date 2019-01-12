@@ -147,7 +147,7 @@ findlabelsp([label(Lab) | C], IP, [pair(Lab, IP) | L]) :- incrIP(IP, IPp), findl
 findlabelsp([block(C2) | C], IP, LL) :- findlabelsp(C2, [0 | IP], L2), incrIP(IP, IPp), findlabelsp(C, IPp, L), append(L2, L, LL).
 findlabelsp([Cmd | C], IP, L) :- \+ member(Cmd, [label(_), block(_)]), incrIP(IP, IPp), findlabelsp(C, IPp, L).
 
-nextcycle(S, _) :- write("-- CYCLE --"), nl, write_term(S, [quoted(true)]), nl, fail.
+nextcycle(S, _) :- write("-- CYCLE --"), nl, writeq(S), nl, fail.
 nextcycle(S, S) :- noinput(S).
 nextcycle(S, S3) :- nextinput(S, S1, I), setpat(S1, I, S2), execcmd(S2, [0], S3).
 
@@ -156,7 +156,7 @@ endcycle(S, S2) :- endcycle_patwrite(S, S1), nextcycle(S1, S2).
 endcycle_patwrite(S, S) :- nflag(S, true).
 endcycle_patwrite(S, S1) :- nflag(S, false), pat(S, P), linetooutput(S, P, S1).
 
-execcmd(S, IP, S1) :- write_term(S, [quoted(true)]), nl, findcmd(S, IP, C), write_term(C, [quoted(true)]), nl, perform(S, IP, C, S1).
+execcmd(S, IP, S1) :- writeq(S), nl, findcmd(S, IP, C), writeq(C), nl, perform(S, IP, C, S1).
 execcmd(S, IP, S1) :- outrange(S, IP), exitblock(IP, IPp), execcmd(S, IPp, S1).
 execcmd(S, [IP], S1) :- outrange(S, [IP]), endcycle(S, S1).
 
