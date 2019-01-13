@@ -90,7 +90,7 @@ termToJudge opts term = Judge $ formatTerm opts term
 
 formatExpr :: Options -> Expr -> [FItem]
 formatExpr opts (Binop bo e1 e2) =
-    [Parens (formatExpr opts e1 ++ formatBO bo ++ formatExpr opts e2)]
+    [Parens (joinMath (formatExpr opts e1) (formatBO bo) (formatExpr opts e2))]
 formatExpr opts (Term term) = formatTerm opts term
 
 formatTerm :: Options -> Term -> [FItem]
@@ -151,3 +151,13 @@ collectAppends :: Term -> [Term]
 collectAppends (Append t1 t2) = collectAppends t1 ++ collectAppends t2
 collectAppends (TExpr (Term t)) = collectAppends t
 collectAppends t = [t]
+
+joinMath :: [FItem] -> [FItem] -> [FItem] -> [FItem]
+joinMath a b c = joinMath' (arg2math a) (arg2math b) (arg2math c)
+  where
+    arg2math [Argument [ch]] = [Math [ch]]
+    arg2math l = l
+
+joinMath' :: [FItem] -> [FItem] -> [FItem] -> [FItem]
+joinMath' [Math a] [Math b] [Math c] = [Math (a ++ " " ++ b ++ " " ++ c)]
+joinMath' a b c = a ++ b ++ c
