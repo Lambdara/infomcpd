@@ -1,3 +1,5 @@
+%% data true cmd, data false cmd
+
 %% skip is_sed
 is_sed([]).
 is_sed([C | S]) :- is_cmd(C), is_sed(S).
@@ -24,6 +26,10 @@ is_sflags(SFlags) :- string(SFlags).
 is_str(Str) :- string(Str).
 
 %% skip is_cmd
+%% data block cmd, data a cmd, data b cmd, data c cmd, data d cmd, data dd cmd
+%% data g cmd, data gg cmd, data h cmd, data hh cmd, data i cmd, data n cmd
+%% data nn cmd, data p cmd, data pp cmd, data q cmd, data s cmd, data t cmd
+%% data x cmd, data y cmd, data label cmd, data lnnum cmd
 is_cmd(block(Cmds)) :- is_sed(Cmds).
 is_cmd(a(Text)) :- is_text(Text).
 is_cmd(b).
@@ -127,6 +133,7 @@ nodup([C | Cs]) :- \+ member(C, Cs), nodup(Cs).
 
 
 %% left newstate 4
+%% data state tuple
 newstate(C, I, L, N, state(C, I, "", "", "", "", L, false, N, 0)).
 %% left code 1, left input 1, left output 1, left pat 1, left hold 1, left aq 1, left labels 1, left tflag 1, left nflag 1, left lnnum 1
 code(  state(C, _, _, _, _, _, _, _, _, _), C).
