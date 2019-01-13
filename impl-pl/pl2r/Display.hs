@@ -37,5 +37,5 @@ safeTextChar '_' = "\\textunderscore{}"
 safeTextChar c = [c]
 
 safeMathChar :: Char -> String
-safeMathChar '_' = "\\underscore{}"
+safeMathChar '_' = "\\_"
 safeMathChar c = [c]
