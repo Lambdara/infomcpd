@@ -2,8 +2,9 @@ module ToRules(toRules) where
 
 import Data.Char
 import Data.List
-import qualified Data.Map.Strict as Map
 import Data.Maybe
+import qualified Data.Map.Strict as Map
+import qualified Data.Set as Set
 import Debug.Trace
 import Text.Parsec
 
@@ -13,26 +14,34 @@ import Rules
 data Options = Options
     { oVars :: Map.Map Name Name
     , oAsSet :: Bool
-    , oLeft :: Map.Map Name Int }
+    , oLeft :: Map.Map Name Int
+    , oSkip :: Set.Set Name }
   deriving (Eq, Show)
 
 baseOptions :: Options
-baseOptions = Options Map.empty False Map.empty
+baseOptions = Options Map.empty False Map.empty Set.empty
 
 optNewPred :: Options -> Options
 optNewPred opts = opts { oVars = Map.empty, oAsSet = False }
 
 toRules :: Program -> Rules
 toRules (Program stmts) = 
-    let (_, _, res) = foldl go ("", baseOptions, []) stmts
+    let (_, res) = go (baseOptions, []) stmts
     in Rules (reverse res)
   where
-    go :: (Name, Options, [Rule]) -> Stmt -> (Name, Options, [Rule])
-    go (prev, opts, rules) (Annot s) = (prev, parseAnnot s opts, rules)
-    go (prev, opts, rules) fact@(Fact (Pred name _) _) =
-        (name,
-         if name == prev then opts else optNewPred opts,
-         toRule opts fact : rules)
+    go :: (Options, [Rule]) -> [Stmt] -> (Options, [Rule])
+    go (opts, rules) [] = (opts, rules)
+    go (opts, rules) (Annot s : rest) = go (parseAnnot s opts, rules) rest
+    go (opts, rules) (fact@(Fact (Pred name _) _) : rest)
+        | name `Set.member` oSkip opts = go (opts, rules) rest
+        | otherwise =
+            let newopts = if name /= findPredName rest then optNewPred opts else opts
+            in go (newopts, toRule opts fact : rules) rest
+
+    findPredName :: [Stmt] -> Name
+    findPredName [] = ""
+    findPredName (Fact (Pred name _) _ : _) = name
+    findPredName (_ : rest) = findPredName rest
 
 parseAnnot :: String -> Options -> Options
 parseAnnot str opts = case runParser pLine opts str str of
@@ -40,13 +49,15 @@ parseAnnot str opts = case runParser pLine opts str str of
     Left err -> error (show err)
   where
     pLine = spaces >> sepBy pItem (spaces >> char ',' >> spaces) >> spaces >> eof >> getState
-    pItem = pVar <|> pLeft
+    pItem = pVar <|> pLeft <|> pSkip
     pVar = string "var " >> pName >>= \a -> char '=' >> pName >>= \b -> addVar a b
     pLeft = string "left " >> pName >>= \name -> space >> spaces >> pInt >>= \n -> setLeft name n
-    pName = many1 alphaNum
+    pSkip = string "skip " >> pName >>= \name -> addSkip name
+    pName = many1 (alphaNum <|> oneOf "_'")
     pInt = read <$> many1 digit
     addVar from to = modifyState $ \o -> o { oVars = Map.insert from to (oVars o) }
     setLeft name n = modifyState $ \o -> o { oLeft = Map.insert name n (oLeft o) }
+    addSkip name = modifyState $ \o -> o { oSkip = Set.insert name (oSkip o) }
 
 toRule :: Options -> Stmt -> Rule
 toRule opts (Fact term@(Pred name _) pes) =
