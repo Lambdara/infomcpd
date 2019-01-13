@@ -74,7 +74,6 @@ formatTerm opts (Pred name args) = formatPred opts name args True
 formatTerm opts term = formatTerm' opts term
 
 formatTerm' :: Options -> Term -> [FItem]
-formatTerm' opts (Pred "member" [t1, t2]) = formatTerm' opts t1 ++ [Math "\\in"] ++ formatTerm' (opts { oAsSet = True }) t2
 formatTerm' _ (Pred name _) | name `elem` ignorePred = []
 formatTerm' opts (Pred name args) = formatPred opts name args False
 formatTerm' opts (List []) = [Math (if oAsSet opts then "\\emptyset" else "\\epsilon")]
@@ -86,12 +85,17 @@ formatTerm' opts (List l)
   where
     opts2 = opts { oAsSet = False }
 formatTerm' opts (Section t1 t2) = [Parens (formatTerm' opts t1 ++ formatTerm' opts t2)]
+formatTerm' opts (Append t1 t2) =
+    let terms = collectAppends (Append t1 t2)
+    in [Parens (concatMap (formatTerm' opts) terms)]
 formatTerm' _    (LitNum n) = [Math (show n)]
 formatTerm' _    (LitStr s) = [Code ("\"" ++ s ++ "\"")]
 formatTerm' opts (Var name) = [Argument (case Map.lookup name (oVars opts) of { Just n -> n ; Nothing -> map toLower name })]
 formatTerm' opts (TExpr expr) = formatExpr opts expr
 
 formatPred :: Options -> Name -> [Term] -> Bool -> [FItem]
+formatPred opts "member" [t1, t2] True =
+    formatTerm' opts t1 ++ [Math "\\in"] ++ formatTerm' (opts { oAsSet = True }) t2
 formatPred opts name args toplevel =
     let useparens = not toplevel && not (null args)
         (left, right) = splitAt (fromMaybe 0 $ Map.lookup name (oLeft opts)) $ map (formatTerm' opts) args
@@ -110,3 +114,8 @@ formatBO BGeq = [Math "\\geq"]
 formatBO BLeq = [Math "\\leq"]
 formatBO BGt = [Math ">"]
 formatBO BLt = [Math "<"]
+
+collectAppends :: Term -> [Term]
+collectAppends (Append t1 t2) = collectAppends t1 ++ collectAppends t2
+collectAppends (TExpr (Term t)) = collectAppends t
+collectAppends t = [t]

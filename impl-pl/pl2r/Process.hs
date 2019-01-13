@@ -9,7 +9,7 @@ process (Program stmts) = Program (map processS stmts)
 
 processS :: Stmt -> Stmt
 processS (Fact term rhs) =
-    let (mp, rhs') = collectIs rhs
+    let (mp, rhs') = collectRepls rhs
     in Fact (processT (replaceVarsT mp term)) (map (processP . replaceVarsP mp) rhs')
 processS (Annot str) = Annot str
 
@@ -32,20 +32,26 @@ replaceVarsT :: Map.Map Name Expr -> Term -> Term
 replaceVarsT mp (Pred name terms) = Pred name (map (replaceVarsT mp) terms)
 replaceVarsT mp (List terms) = List (map (replaceVarsT mp) terms)
 replaceVarsT mp (Section t1 t2) = Section (replaceVarsT mp t1) (replaceVarsT mp t2)
+replaceVarsT mp (Append t1 t2) = Append (replaceVarsT mp t1) (replaceVarsT mp t2)
 replaceVarsT _ (LitNum n) = LitNum n
 replaceVarsT _ (LitStr n) = LitStr n
 replaceVarsT mp (Var name) = case Map.lookup name mp of
-    Just expr -> TExpr expr
+    Just expr -> TExpr (replaceVarsE mp expr)
     Nothing -> Var name
 replaceVarsT mp (TExpr expr) = TExpr $ replaceVarsE mp expr
 
-collectIs :: [PredExpr] -> (Map.Map Name Expr, [PredExpr])
-collectIs pes = go Map.empty pes
+collectRepls :: [PredExpr] -> (Map.Map Name Expr, [PredExpr])
+collectRepls pes = go Map.empty pes
   where
     go mp [] = (mp, [])
     go mp (Is name expr : rest) =
         case Map.lookup name mp of
-            Just _ -> error "Duplicate 'is' terms not supported"
+            Just _ -> error "Duplicate replication terms not supported"
             Nothing -> go (Map.insert name expr mp) rest
+    go mp (Expr (Term (Pred appstr [t1, t2, Var name])) : rest)
+        | appstr `elem` ["append", "string_concat"] =
+            case Map.lookup name mp of
+                Just _ -> error "Duplicate replication terms not supported"
+                Nothing -> go (Map.insert name (Term (Append t1 t2)) mp) rest
     go mp (Expr expr : rest) = fmap (Expr expr :) (go mp rest)
     go mp (Not expr : rest) = fmap (Not expr :) (go mp rest)

@@ -26,6 +26,7 @@ data Binop = BPlus | BMinus | BEq | BNeq | BGeq | BLeq | BGt | BLt
 data Term = Pred Name [Term]
           | List [Term]
           | Section Term Term  -- [H | T]
+          | Append Term Term
           | LitNum Int
           | LitStr String
           | Var Name
