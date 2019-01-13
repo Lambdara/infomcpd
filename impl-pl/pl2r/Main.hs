@@ -30,7 +30,9 @@ main = do
         ,return (display rules)
         ,readFile "epilogue.tex"]
 
-    tempdir <- mktemp
+    -- tempdir <- mktemp
+    let tempdir = ".out"
+    createDirectoryIfMissing False tempdir
 
     writeFile (tempdir ++ "/out.tex") result
 
@@ -40,4 +42,4 @@ main = do
 
     copyFile (tempdir ++ "/out.pdf") "out.pdf"
 
-    removeDirectoryRecursive tempdir
+    -- removeDirectoryRecursive tempdir

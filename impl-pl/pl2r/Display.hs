@@ -1,5 +1,6 @@
 module Display(display) where
 
+import Data.Char
 import Data.List
 
 import Rules
@@ -9,7 +10,8 @@ display (Rules rs) = intercalate "\n\n" (map displayR rs)
 
 displayR :: Rule -> String
 displayR (Rule name reqs concl) =
-    "\\[ \\RULE[" ++ safeText name ++ "]"
+    -- "\\[ \\RULE[" ++ safeText name ++ "]"
+    "\\[ \\RULE"
         ++ "{" ++ intercalate " \\qquad " (map displayJ (filter (not . isEmpty) reqs)) ++ "}"
         ++ "{" ++ displayJ concl ++ "} \\]"
   where
@@ -30,12 +32,13 @@ safeText :: String -> String
 safeText = concatMap safeTextChar
 
 safeMath :: String -> String
-safeMath = concatMap safeMathChar
+safeMath "" = ""
+safeMath ('\n':cs) = "\\hookleftarrow" ++ safeMath cs
+safeMath "_" = "\\_"
+safeMath ('_':c:cs) | not (isDigit c) && c /= '{' = "\\_" ++ safeMath (c:cs)
+safeMath (c:cs) = c : safeMath cs
 
 safeTextChar :: Char -> String
+safeTextChar '\n' = "$\\hookleftarrow$"
 safeTextChar '_' = "\\textunderscore{}"
 safeTextChar c = [c]
-
-safeMathChar :: Char -> String
-safeMathChar '_' = "\\_"
-safeMathChar c = [c]

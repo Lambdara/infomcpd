@@ -38,7 +38,7 @@ pFact = do
     return $ Fact term expr
 
 pTerm :: Parser Term
-pTerm = pPred <|> pList <|> pLitNum <|> pLitStr <|> pVar
+pTerm = pVar <|> pPred <|> pList <|> pLitNum <|> pLitStr
 
 pPred :: Parser Term
 pPred = do
@@ -93,9 +93,11 @@ pLitStr = do
 pVar :: Parser Term
 pVar = try $ do
     pWhiteComment
-    Var <$> ((:) <$> initVarChar <*> many furtherVarChar)
+    optional (char '_')
+    name <- (:) <$> initVarChar <*> many furtherVarChar
+    return $ Var name
   where
-    initVarChar = upper <|> char '_'
+    initVarChar = upper
     furtherVarChar = letter <|> char '_' <|> digit
 
 pPredExpr :: Parser PredExpr
