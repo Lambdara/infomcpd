@@ -15,11 +15,15 @@ data Options = Options
     { oVars :: Map.Map Name Name
     , oAsSet :: Bool
     , oLeft :: Map.Map Name Int
-    , oSkip :: Set.Set Name }
+    , oSkip :: Set.Set Name
+    , oData :: Map.Map Name DataStyle }
+  deriving (Eq, Show)
+
+data DataStyle = DPred | DTuple | DCmd
   deriving (Eq, Show)
 
 baseOptions :: Options
-baseOptions = Options Map.empty False Map.empty Set.empty
+baseOptions = Options Map.empty False Map.empty Set.empty Map.empty
 
 optNewPred :: Options -> Options
 optNewPred opts = opts { oVars = Map.empty, oAsSet = False }
@@ -48,16 +52,26 @@ parseAnnot str opts = case runParser pLine opts str str of
     Right newopts -> newopts
     Left err -> error (show err)
   where
-    pLine = spaces >> sepBy pItem (spaces >> char ',' >> spaces) >> spaces >> eof >> getState
-    pItem = pVar <|> pLeft <|> pSkip
+    pLine = sepBy (spaces >> pItem) (spaces >> char ',') >> spaces >> eof >> getState
+    pItem = pVar <|> pLeft <|> pSkip <|> pData
+
     pVar = string "var " >> pName >>= \a -> char '=' >> pName >>= \b -> addVar a b
     pLeft = string "left " >> pName >>= \name -> space >> spaces >> pInt >>= \n -> setLeft name n
     pSkip = string "skip " >> pName >>= \name -> addSkip name
+    pData = string "data " >> pName >>= \name -> space >> spaces >> pName >>= \style -> addData name style
+
     pName = many1 (alphaNum <|> oneOf "_'")
     pInt = read <$> many1 digit
+
     addVar from to = modifyState $ \o -> o { oVars = Map.insert from to (oVars o) }
     setLeft name n = modifyState $ \o -> o { oLeft = Map.insert name n (oLeft o) }
     addSkip name = modifyState $ \o -> o { oSkip = Set.insert name (oSkip o) }
+    addData name style = modifyState $ \o -> o { oData = Map.insert name (parseData style) (oData o) }
+
+    parseData "pred" = DPred
+    parseData "tuple" = DTuple
+    parseData "cmd" = DCmd
+    parseData style = error $ "Unknown data style '" ++ style ++ "'"
 
 toRule :: Options -> Stmt -> Rule
 toRule opts (Fact term@(Pred name _) pes) =
@@ -108,10 +122,17 @@ formatPred :: Options -> Name -> [Term] -> Bool -> [FItem]
 formatPred opts "member" [t1, t2] True =
     formatTerm' opts t1 ++ [Math "\\in"] ++ formatTerm' (opts { oAsSet = True }) t2
 formatPred opts name args toplevel =
-    let useparens = not toplevel && not (null args)
-        (left, right) = splitAt (fromMaybe 0 $ Map.lookup name (oLeft opts)) $ map (formatTerm' opts) args
-        res = concat left ++ [Keyword name] ++ concat right
-    in if useparens then [Parens res] else res
+    let style = if toplevel then DPred else fromMaybe DPred $ Map.lookup name (oData opts)
+    in case style of
+        DTuple ->
+            [Parens (intercalate [Math ","] $ map (formatTerm' opts) args)]
+        _ ->
+            let useparens = not toplevel && not (null args)
+                numleft = if not toplevel then 0 else fromMaybe 0 $ Map.lookup name (oLeft opts)
+                (left, right) = splitAt numleft $ map (formatTerm' opts) args
+                keyword = if style == DCmd then Command name else Keyword name
+                res = concat left ++ [keyword] ++ concat right
+            in if useparens then [Parens res] else res
 
 ignorePred :: [Name]
 ignorePred = ["write", "nl", "writeq"]
