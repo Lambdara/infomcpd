@@ -1,3 +1,4 @@
+{-# LANGUAGE MultiWayIf #-}
 module ToRules(toRules) where
 
 import Data.Char
@@ -90,7 +91,7 @@ termToJudge opts term = Judge $ formatTerm opts term
 
 formatExpr :: Options -> Expr -> [FItem]
 formatExpr opts (Binop bo e1 e2) =
-    [Parens (joinMath (formatExpr opts e1) (formatBO bo) (formatExpr opts e2))]
+    [Parens (joinMath [formatExpr opts e1, formatBO bo, formatExpr opts e2])]
 formatExpr opts (Term term) = formatTerm opts term
 
 formatTerm :: Options -> Term -> [FItem]
@@ -125,12 +126,14 @@ formatPred opts name args toplevel =
     let style = if toplevel then DPred else fromMaybe DPred $ Map.lookup name (oData opts)
     in case style of
         DTuple ->
-            [Parens (intercalate [Math ","] $ map (formatTerm' opts) args)]
+            [Parens (joinMath $ intersperse [Math ","] $ map (formatTerm' opts) args)]
         _ ->
             let useparens = not toplevel && not (null args)
                 numleft = if not toplevel then 0 else fromMaybe 0 $ Map.lookup name (oLeft opts)
                 (left, right) = splitAt numleft $ map (formatTerm' opts) args
-                keyword = if style == DCmd then Command name else Keyword name
+                keyword = if | style == DCmd -> Command name
+                             | name == "_" -> Argument "_"
+                             | otherwise -> Keyword name
                 res = concat left ++ [keyword] ++ concat right
             in if useparens then [Parens res] else res
 
@@ -152,12 +155,13 @@ collectAppends (Append t1 t2) = collectAppends t1 ++ collectAppends t2
 collectAppends (TExpr (Term t)) = collectAppends t
 collectAppends t = [t]
 
-joinMath :: [FItem] -> [FItem] -> [FItem] -> [FItem]
-joinMath a b c = joinMath' (arg2math a) (arg2math b) (arg2math c)
+joinMath :: [[FItem]] -> [FItem]
+joinMath terms | traceShow terms False = undefined
+joinMath terms = foldl1 joinMath' (map arg2math terms)
   where
     arg2math [Argument [ch]] = [Math [ch]]
     arg2math l = l
 
-joinMath' :: [FItem] -> [FItem] -> [FItem] -> [FItem]
-joinMath' [Math a] [Math b] [Math c] = [Math (a ++ " " ++ b ++ " " ++ c)]
-joinMath' a b c = a ++ b ++ c
+joinMath' :: [FItem] -> [FItem] -> [FItem]
+joinMath' [Math a] [Math b] = [Math (a ++ " " ++ b)]
+joinMath' a b = a ++ b
