@@ -13,7 +13,7 @@ is_addr2n(a2(A, B)) :- is_addrsimple(A), is_addrsimple(B).
 is_addr2n(A) :- is_addr1n(A).
 is_addr1n(A) :- is_addrsimple(A).
 is_addr1n(none).
-is_addrsimple(lnnum(N)) :- number(N).
+is_addrsimple(ln(N)) :- number(N).
 is_addrsimple(eof).
 is_addrsimple(Regex) :- is_regex(Regex).
 
@@ -203,16 +203,16 @@ addrtag(addr2(Addr, Cmd), Addr, Cmd).
 addrtag(addr1(Addr, Cmd), Addr, Cmd).
 
 %% left addrmatch 2
-addrmatch(S, lnnum(N)) :- lnnum(S, N).
-addrmatch(S, not(lnnum(N))) :- lnnum(S, M), N \= M.
+addrmatch(S, ln(N)) :- lnnum(S, N).
+addrmatch(S, not(ln(N))) :- lnnum(S, M), N \= M.
 addrmatch(S, eof) :- noinput(S).
 %% left haveinput 1
 addrmatch(S, not(eof)) :- haveinput(S).
-addrmatch(S, a2(lnnum(N), lnnum(M))) :- lnnum(S, K), N =< K, K =< M.
+addrmatch(S, a2(ln(N), ln(M))) :- lnnum(S, K), N =< K, K =< M.
 
 %% left addrmatch_not 2
 addrmatch_not(S, not(A)) :- addrmatch(S, A).
-addrmatch_not(S, lnnum(N)) :- addrmatch(S, not(lnnum(N))).
+addrmatch_not(S, ln(N)) :- addrmatch(S, not(ln(N))).
 addrmatch_not(S, eof) :- addrmatch(S, not(eof)).
 addrmatch_not(S, a2(A, B)) :- addrmatch(S, not(a2(A, B))).
 
