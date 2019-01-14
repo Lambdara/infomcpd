@@ -262,7 +262,7 @@ perform(S, IP, x, S3) :- pat(S, P), hold(S, H), setpat(S, H, S1), sethold(S1, P,
 perform(S, IP, label(_Lab), S1) :- incrIP(IP, IPp), execcmd(S, IPp, S1).
 %% left number_string 1
 perform(S, IP, lnnum, S2) :- lnnum(S, K), number_string(K, Str), linetooutput(S, Str, S1), incrIP(IP, IPp), execcmd(S1, IPp, S2).
-perform(S, IP, block(_Lab), S1) :- execcmd(S, [0 | IP], S1).
+perform(S, IP, block(_L), S1) :- execcmd(S, [0 | IP], S1).
 
 %% predname lookuplabelp lookuplabel', left lookuplabelp 2
 %% var L=L, var Lab=\ell

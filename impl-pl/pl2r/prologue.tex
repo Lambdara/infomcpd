@@ -29,13 +29,18 @@
 \newcommand\padded[1]{\makecell[c]{~\\[-6pt]\hspace{10px} #1 \hspace{10px}~\\[-6pt]~}}
 \newcommand{\ifempty}[3]{\ifthenelse{\isempty{#1}}{#2}{#3}}
 
-\newcommand\RULE[3][]{\begin{array}{c} #2 \\ \hline #3 \end{array}\ifempty{#1}{}{\text{\ \ #1}}}
-\newcommand\J[1]{\ensuremath{\text{#1}\ }}
-\newcommand\cmd[1]{\ensuremath{\text{\texttt{#1}}\ }}
-\renewcommand\arg[1]{\ensuremath{\mathit{#1}\ }}
+% Enable the first to show rule names; enable to second to hide them
+% \newcommand\namef[1]{#1}
+\newcommand\namef[1]{}
+
+\newcommand\RULE[3][]{\begin{array}{c} #2 \\ \hline #3 \end{array}\ifempty{#1}{}{\namef{\text{\ \ #1}}}}
+\newcommand\J[1]{\ensuremath{\text{#1}}}
+\newcommand\cmd[1]{\ensuremath{\text{\texttt{#1}}}}
+\newcommand\code[1]{\ensuremath{\text{\texttt{#1}}}}
+\renewcommand\arg[1]{\ensuremath{\mathit{#1}}}
 
 \let\oldepsilon\epsilon \let\epsilon\varepsilon \let\varepsilon\oldepsilon
-\let\oldemptyset\emptyset \let\emptyset\varnull \let\varnull\oldemptyset
+\let\oldemptyset\emptyset \let\emptyset\varnothing \let\varnothing\oldemptyset
 
 \begin{document}
 
