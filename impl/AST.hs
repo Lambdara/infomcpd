@@ -6,37 +6,34 @@ data Program = Program [Cmd]
 
 type Label = String
 
-data Cmd = Block Addr2 [Cmd]
+data Cmd = Cmd Addr Fun
+  deriving (Show, Eq)
+
+data Fun = Block [Cmd]
          | Label Label
-         | Branch Addr2 (Maybe Label)
-         | To Addr2 (Maybe Label)
-         | Quit Addr1
-         | LineNum Addr1
-         | Delete Addr2
-         | DeleteNL Addr2
-         | Print Addr2
-         | PrintNL Addr2
-         | Next Addr2
-         | NextAppend Addr2
-         | Get Addr2
-         | GetAppend Addr2
-         | Hold Addr2
-         | HoldAppend Addr2
-         | Exchange Addr2
-         | Append Addr1 String
-         | Insert Addr1 String
-         | Change Addr2 String
-         | Subst Addr2 Regex String SFlags
-         | Trans Addr2 String String
+         | Branch (Maybe Label)
+         | To (Maybe Label)
+         | Quit
+         | LineNum
+         | Delete
+         | DeleteNL
+         | Print
+         | PrintNL
+         | Next
+         | NextAppend
+         | Get
+         | GetAppend
+         | Hold
+         | HoldAppend
+         | Exchange
+         | Append String
+         | Insert String
+         | Change String
+         | Subst Regex String SFlags
+         | Trans String String
   deriving (Show, Eq)
 
-data Addr2 = NoAddr2
-           | Addr2_1 Bool BaseAddr
-           | Addr2 Bool (BaseAddr, BaseAddr)
-  deriving (Show, Eq)
-
-data Addr1 = NoAddr1
-           | Addr1 Bool BaseAddr
+data Addr = NoAddr | Addr1 Bool BaseAddr | Addr2 Bool BaseAddr BaseAddr
   deriving (Show, Eq)
 
 data BaseAddr = ALine Int | AEnd | ARegex Regex
