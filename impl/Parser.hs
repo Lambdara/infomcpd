@@ -151,7 +151,45 @@ pStrictDelimited p = do
     return a
 
 pRegexTill :: Char -> Parser Regex
-pRegexTill = pStringTill
+pRegexTill delim = pRegConcat (char delim)
+  where
+    pRegConcat :: Parsec String () a -> Parsec String () Regex
+    pRegConcat delimp = RegConcat <$> manyTill pSimpleRE (try delimp)
+    pSimpleRE = do
+        base <- pRegAnchorLeft <|> pRegAnchorRight <|>
+                pRegGroup <|> pRegBackref <|> pRegClass <|> pRegChar
+        pRegStar base <|> pRegRep base <|> return base
+    pRegAnchorLeft = char '^' >> return RegAnchorLeft
+    pRegAnchorRight = char '$' >> return RegAnchorRight
+    pRegGroup = RegGroup <$> (string "\\(" >> pRegConcat (string "\\)"))
+    pRegBackref = char '\\' >> (RegBackref . read . pure <$> digit)
+    pRegChar = RegChar <$> ((try (string "\\n") >> return '\n') <|> satisfy (/= '\\'))
+    pRegStar :: Regex -> Parsec String () Regex
+    pRegStar r = char '*' >> return (RegStar r)
+    pRegRep :: Regex -> Parsec String () Regex
+    pRegRep r = do
+        void $ char '{'
+        n <- read <$> many1 digit
+        choice [char '}' >> return (RegRep r n (Just n))
+               ,char ',' >> choice [char '}' >> return (RegRep r n Nothing)
+                                   ,do m <- read <$> many1 digit
+                                       void $ char '}'
+                                       return (RegRep r n (Just m))]]
+
+    pRegClass = do
+        void $ char '['
+        pos <- isNothing <$> optionMaybe (char '^')
+        s1 <- option [] (pure . RCChar <$> char ']')
+        s2 <- manyTill pRegClassItem (lookAhead $ string "]" <|> try (string "-]"))
+        s3 <- option [] (pure . RCChar <$> char '-')
+        void $ char ']'
+        return $ RegClass pos (s1 ++ s2 ++ s3)
+    pRegClassItem = pRCRange <|> (RCChar <$> anyChar)
+    pRCRange = try $ do
+        a <- anyChar
+        void $ char '-'
+        b <- satisfy (/= ']')
+        return $ RCRange a b
 
 pStringTill :: Char -> Parser String
 pStringTill delim = do
