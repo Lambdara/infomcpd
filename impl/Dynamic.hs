@@ -219,7 +219,7 @@ implWrite state
   | otherwise = state { sOutput = sOutput state ++ sPat state ++ "\n" }
 
 splitLine :: String -> (String, String)
-splitLine = span (/= '\n')
+splitLine = fmap tail . span (/= '\n')
 
 incrIP :: IP -> IP
 incrIP (n : ip) = (n + 1 : ip)
