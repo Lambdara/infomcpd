@@ -20,7 +20,7 @@ runFile fname nflag = do
     print prog
     print $ Static.ok prog
     input <- getContents
-    print $ Dynamic.run prog input nflag
+    putStr $ Dynamic.run prog input nflag
 
 
 usage :: String
