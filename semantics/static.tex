@@ -22,6 +22,8 @@
 \newcommand\code[1]{\ensuremath{\text{\texttt{#1}}}}
 \renewcommand\arg[1]{\ensuremath{\mathit{#1}}}
 \newcommand\angles[1]{\langle #1 \rangle}
+\newcommand\sanchor{\cmd{\ensuremath{{}^\land}}}
+\newcommand\eanchor{\cmd{\$}}
 
 % Swap \epsilon and \varepsilon
 \let\oldepsilon\epsilon \let\epsilon\varepsilon \let\varepsilon\oldepsilon
@@ -33,9 +35,9 @@
 \section{Static semantics}
 
 We say a \SED{} program is correct according to the static semantics if the `ok' judgement can be proven of it.
-This is true if it is both \textbf{l}abel-\textbf{c}orrect and \textbf{y}-\textbf{c}orrect:
+This is true if it is \textbf{l}abel-\textbf{c}orrect, \textbf{y}-\textbf{c}orrect and \textbf{r}egex-\textbf{c}orrect:
 \begin{gather*}
-	\RULE{s\ \J{sed} \qquad s\ \J{lc} \qquad s\ \J{yc}}{s\ \J{ok}}
+	\RULE{s\ \J{sed} \qquad s\ \J{lc} \qquad s\ \J{yc} \qquad s\ \J{rc}}{s\ \J{ok}}
 \end{gather*}
 %
 A program is label-correct if it refers only to labels defined elsewhere in the program.
@@ -78,6 +80,44 @@ A program is y-correct if for each \cmd{y}-instruction in the program, the patte
 	\RULE{(c\ s)\ \J{str} \qquad c\ \J{notin}\ s \qquad s\ \J{nodup}}{(c\ s)\ \J{nodup}} \\
 	\RULE{c\ \J{char}}{c\ \J{notin}\ \epsilon} \qquad
 	\RULE{c\ \J{char} \qquad (c'\ s)\ \J{str} \qquad c \not= c' \qquad c\ \J{notin}\ s}{c\ \J{notin}\ (c'\ s)}
+\end{gather*}
+%
+A program is regex-correct if each address regular expression is regex-correct' (with any number of capture groups) and each \cmd{s} command is \textbf{s}-\textbf{c}orrect.
+\begin{gather*}
+	\RULE{}{\epsilon\ \J{rc}} \qquad
+	\RULE{\arg{a_1}\ \J{rc'}\ \arg{n} \qquad (\arg{fun}\ \arg{s})\ \J{rc}}{(\angles{\arg{a_1}, (\cmd{!},)^?, \arg{fun}}\ s)\ \J{rc}} \qquad
+	\RULE{\arg{a_1}\ \J{rc'}\ \arg{n} \qquad \arg{a_2}\ \J{rc'}\ \arg{m} \qquad (\arg{fun}\ s)\ \J{rc}}{(\angles{\arg{a_1}, \arg{a_2}, (\cmd{!},)^?, \arg{fun}}\ s)\ \J{rc}} \\
+	\RULE{(\cmd{s}\ \arg{reg}\ \arg{repl}\ \arg{flags})\ \J{sc}}{((\cmd{s}\ \arg{reg}\ \arg{repl}\ \arg{flags})\ \arg{s})\ \J{rc}} \qquad
+	\RULE{s\ \J{rc}}{(\text{\underline{anything else}}\ s)\ \J{rc}}
+\end{gather*}
+The element ``$(\cmd{!},)^?$'' should be understood to be an optional ``\cmd{!},''; i.e.\ those rules matches both negated and non-negated addresses.
+The ``\underline{anything else}'' should be understood to match anything that is not a command with an address or an \cmd{s} command.
+
+An \cmd{s} command is s-correct if its regular expression is regex-correct' and the backreferences in its replacement only refer to existing capture groups.
+The \J{rc'} judgement checks regex integrity and returns the number of capture groups, which the \J{replc} (\textbf{repl}acement-\textbf{c}orrect) judgement uses to verify the replacement.
+\begin{gather*}
+	\RULE{\arg{reg}\ \J{rc'}\ \arg{n} \qquad \arg{repl}\ \J{replc}\ n}{(\cmd{s}\ \arg{reg}\ \arg{repl}\ \arg{flags})\ \J{sc}}
+\end{gather*}
+%
+The \J{rc'} judgement loops over the regular expression \emph{backwards}, and verifies backreferences and interval-expressions.
+\begin{gather*}
+	\RULE{}{\epsilon\ \J{rc'}\ 0} \qquad
+	\RULE{r\ \J{rc'}\ n \qquad k \leq n}{(r\ \cmd{\textbackslash} k)\ \J{rc'}\ n} \qquad
+	\RULE{(r\ \arg{r_1})\ \J{rc'}\ n}{(r\ (\arg{r_1}))\ \J{rc'}\ (n + 1)} \qquad
+	\RULE{(r\ \arg{r_1})\ \J{rc'}\ n \qquad \arg{k_1} \leq \arg{k_2}}{(r\ \arg{r_1}\cmd{\{}\arg{k_1}\cmd{,}\arg{k_2}\cmd{\}})\ \J{rc'}\ n} \\
+	\RULE{c\ \J{char} \qquad r\ \J{rc'}\ n}{(r\ c)\ \J{rc'}\ n} \qquad
+	\RULE{r\ \J{rc'}\ n}{(r\ \cmd{[} \arg{chars} \cmd{]})\ \J{rc'}\ n} \qquad
+	\RULE{(r\ \arg{r_1})\ \J{rc'}\ n}{(r\ \arg{r_1}^*)\ \J{rc'}\ n} \\
+	\RULE{r\ \J{rc'}\ n}{(r\ \sanchor)\ \J{rc'}\ n} \qquad
+	\RULE{r\ \J{rc'}\ n}{(r\ \eanchor)\ \J{rc'}\ n}
+\end{gather*}
+%
+The \J{replc} judgement checks the validity of backreferences in a replacement specification.
+\begin{gather*}
+	\RULE{}{\epsilon\ \J{replc}\ n} \qquad
+	\RULE{k \leq n \qquad s\ \J{replc}\ n}{(\cmd{\textbackslash} k\ s)\ \J{replc}\ n} \qquad
+	\RULE{c\ \J{char} \qquad s\ \J{replc}\ n}{(c\ s)\ \J{replc}\ n} \qquad
+	\RULE{s\ \J{replc}\ n}{(\cmd{\&}\ s)\ \J{replc}\ n}
 \end{gather*}
 
 
