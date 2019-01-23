@@ -115,6 +115,14 @@ Regular expressions are a sub-language, mostly following the POSIX BRE specifica
 	\RULE{\arg{reg}\ \J{regex} \qquad n,m \in \mathbb{Z}_{\geq0}}{\arg{reg}\cmd{\{}n\cmd{,}m\cmd{\}}\ \J{regitem}} \qquad
 \end{gather*}
 %
+Replacement strings in an \cmd{s} command contain backreferences:
+\begin{gather*}
+	\RULE{}{\epsilon\ \J{regrepl}} \qquad
+	\RULE{c\ \J{char} \qquad s\ \J{regrepl}}{c\ s\ \J{regrepl}} \qquad
+	\RULE{n \in \mathbb{Z}_{\geq0} \qquad s\ \J{regrepl}}{\cmd{\textbackslash}n\ s\ \J{regrepl}} \qquad
+	\RULE{s\ \J{regrepl}}{\cmd{\&}\ s\ \J{regrepl}}
+\end{gather*}
+%
 Base addresses are specified as follows:
 \begin{gather*}
 	\RULE{n \in \mathbb{Z}_{\geq 1}}{n\ \J{basead}} \qquad
