@@ -102,7 +102,7 @@ Base addresses are specified as follows:
 The following auxiliary judgements are used:
 \begin{gather*}
 	\RULE{}{\epsilon\ \J{str}} \qquad
-	\RULE{c\ \J{char} \qquad s\ \J{str}}{c\ s\ \J{str}} \\
+	\RULE{c\ \J{char} \qquad s\ \J{str}}{(c : s)\ \J{str}} \\
 	\RULE{\exists n : (n \in \mathbb{Z}_{\geq1} \land \arg{flags} \in \{\epsilon,\, n,\, \cmd{g},\, \cmd{p},\, n\ \cmd{p},\, \cmd{p}\ n,\, \cmd{g}\ \cmd{p},\, \cmd{p}\ \cmd{g}\})}{\arg{flags}\ \J{sflags}}
 \end{gather*}
 The ``label'' judgement defines a set of values on which only an equivalence relation (equality) is required.
