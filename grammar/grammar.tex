@@ -25,6 +25,8 @@
 \newcommand\code[1]{\ensuremath{\text{\texttt{#1}}}}
 \renewcommand\arg[1]{\ensuremath{\mathit{#1}}}
 \newcommand\angles[1]{\langle #1 \rangle}
+\newcommand\sanchor{\cmd{\ensuremath{{}^\land}}}
+\newcommand\eanchor{\cmd{\$}}
 
 % Swap \epsilon and \varepsilon
 \let\oldepsilon\epsilon \let\epsilon\varepsilon \let\varepsilon\oldepsilon
@@ -54,10 +56,12 @@ Functions judged \J{fun0} cannot take addresses, those judged \J{fun1} can take 
 	\RULE{a_1\ \J{basead} \qquad a_2\ \J{basead} \qquad f\ \J{fun2}}{\angles{a_1, a_2, f}\ \J{cmd}} \qquad
 	\RULE{a_1\ \J{basead} \qquad a_2\ \J{basead} \qquad f\ \J{fun2}}{\angles{a_1, a_2, \cmd{!}, f}\ \J{cmd}}
 \end{gather*}
+%
 Commands can be nested in blocks:
 \begin{gather*}
 	\RULE{\arg{cmds}\ \J{sed}}{\cmd{\{} \arg{cmds} \cmd{\}}\ \J{fun2}}
 \end{gather*}
+%
 Functions that (optionally) take a label:
 \begin{gather*}
 	\RULE{\arg{label}\ \J{label}}{\cmd{:}\ \arg{label}\ \J{fun0}} \qquad
@@ -66,6 +70,7 @@ Functions that (optionally) take a label:
 	\RULE{\arg{label}\ \J{label}}{\cmd{t}\ \arg{label}\ \J{fun2}} \qquad
 	\RULE{}{\cmd{t}\ \J{fun2}}
 \end{gather*}
+%
 Simple functions that take no arguments: (Note that \cmd{q} and \cmd{=} are 1-address functions.)
 \begin{gather*}
 	\RULE{}{\cmd{d}\ \J{fun2}} \qquad
@@ -82,31 +87,49 @@ Simple functions that take no arguments: (Note that \cmd{q} and \cmd{=} are 1-ad
 	\RULE{}{\cmd{x}\ \J{fun2}} \qquad
 	\RULE{}{\cmd{=}\ \J{fun1}}
 \end{gather*}
+%
 Some commands take a text argument:
 \begin{gather*}
 	\RULE{\arg{text}\ \J{str}}{\cmd{a}\ \arg{text}\ \J{fun1}} \qquad
 	\RULE{\arg{text}\ \J{str}}{\cmd{i}\ \arg{text}\ \J{fun1}} \qquad
 	\RULE{\arg{text}\ \J{str}}{\cmd{c}\ \arg{text}\ \J{fun2}}
 \end{gather*}
+%
 Finally, the text manipulation commands:
 \begin{gather*}
-	\RULE{\arg{pat}\ \J{regex} \qquad \arg{repl}\ \J{str} \qquad \arg{flags}\ \J{sflags}}{\cmd{s}\ \arg{pat}\ \arg{repl}\ \arg{sflags}\ \J{fun2}} \qquad
+	\RULE{\arg{pat}\ \J{regex} \qquad \arg{repl}\ \J{regrepl} \qquad \arg{flags}\ \J{sflags}}{\cmd{s}\ \cmd{/}\arg{pat}\cmd{/}\ \arg{repl}\ \arg{sflags}\ \J{fun2}} \qquad
 	\RULE{\arg{pat}\ \J{str} \qquad \arg{repl}\ \J{str}}{\cmd{y}\ \arg{pat}\ \arg{repl}\ \J{fun2}}
 \end{gather*}
+%
+Regular expressions are a sub-language, mostly following the POSIX BRE specification\footnote{\url{https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap09.html}} (without collating features; note that bracket expressions (a.k.a.\ character classes) just accept a list of characters in this grammar, which is only a loss of convenience and not of expressivity):
+\begin{gather*}
+	\RULE{}{\epsilon\ \J{regex}} \qquad
+	\RULE{\arg{item}\ \J{regitem} \qquad \arg{r}\ \J{regex}}{\arg{item}\ \arg{r}\ \J{regex}} \\
+	\RULE{c\ \J{char}}{c\ \J{regitem}} \qquad
+	\RULE{\arg{chars}\ \J{str}}{\cmd{[} \arg{chars} \cmd{]}\ \J{regitem}} \qquad
+	\RULE{n \in \mathbb{Z}_{\geq0}}{\cmd{\textbackslash} n\ \J{regitem}} \qquad
+	\RULE{}{\sanchor\ \J{regitem}} \qquad
+	\RULE{}{\eanchor\ \J{regitem}} \\
+	\RULE{\arg{reg}\ \J{regex}}{(\arg{reg})\ \J{regitem}} \qquad
+	\RULE{\arg{reg}\ \J{regex}}{\arg{reg}^*\ \J{regitem}} \qquad
+	\RULE{\arg{reg}\ \J{regex} \qquad n,m \in \mathbb{Z}_{\geq0}}{\arg{reg}\cmd{\{}n\cmd{,}m\cmd{\}}\ \J{regitem}} \qquad
+\end{gather*}
+%
 Base addresses are specified as follows:
 \begin{gather*}
 	\RULE{n \in \mathbb{Z}_{\geq 1}}{n\ \J{basead}} \qquad
 	\RULE{}{\cmd{\$}\ \J{basead}} \qquad
 	\RULE{\arg{reg}\ \J{regex}}{\arg{reg}\ \J{basead}} \qquad
 \end{gather*}
+%
 The following auxiliary judgements are used:
 \begin{gather*}
 	\RULE{}{\code{""}\ \J{str}} \qquad
 	\RULE{c\ \J{char} \qquad s\ \J{str}}{(c : s)\ \J{str}} \\
 	\RULE{\exists n : (n \in \mathbb{Z}_{\geq1} \land \arg{flags} \in \{\epsilon,\, n,\, \cmd{g},\, \cmd{p},\, n\ \cmd{p},\, \cmd{p}\ n,\, \cmd{g}\ \cmd{p},\, \cmd{p}\ \cmd{g}\})}{\arg{flags}\ \J{sflags}}
 \end{gather*}
+%
 The ``label'' judgement defines a set of values on which only an equivalence relation (equality) is required.
-The ``regex'' judgement defines the set of accepted regular expressions, which for now is kept abstract.
 The ``char'' judgement defines the set of characters, which has no particular requirements except that this set needs to be finite.
 
 
