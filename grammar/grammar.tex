@@ -25,6 +25,8 @@
 \newcommand\code[1]{\ensuremath{\text{\texttt{#1}}}}
 \renewcommand\arg[1]{\ensuremath{\mathit{#1}}}
 \newcommand\angles[1]{\langle #1 \rangle}
+\newcommand\sanchor{\cmd{\ensuremath{{}^\land}}}
+\newcommand\eanchor{\cmd{\$}}
 
 % Swap \epsilon and \varepsilon
 \let\oldepsilon\epsilon \let\epsilon\varepsilon \let\varepsilon\oldepsilon
@@ -39,23 +41,27 @@ Note that these rules do not yet define the static semantics, only an abstract r
 Note also that the programs defined by this rule set form a strict subset of the programs specified by the official \SED{} specification\footnote{\url{https://pubs.opengroup.org/onlinepubs/9699919799/utilities/sed.html}}, since the \texttt{l}, \texttt{r}, \texttt{w} and \texttt{\#} commands are missing, as well as an \texttt{s} flag.
 
 
-A program consists of commands, which consist of an address and a function.
-Functions can take a varying number of addresses, though a function can always take less addresses than specified.
+A program consists of commands, which consist of a function and possibly zero, one or two addresses.
+Functions judged \J{fun0} cannot take addresses, those judged \J{fun1} can take at most 1 address, and those judged \J{fun2} can take zero, one or two addresses.
 \begin{gather*}
 	\RULE{}{\epsilon\ \J{sed}} \qquad
 	\RULE{c\ \J{cmd} \qquad s\ \J{sed}}{c\ s\ \J{sed}} \\
-	\RULE{\arg{f}\ \J{fun}}{\angles{\epsilon, f}\ \J{cmd}} \qquad
-	\RULE{a\ \J{addr1} \qquad f\ \J{fun1}}{\angles{a, f}\ \J{cmd}} \qquad
-	\RULE{a\ \J{addr1} \qquad f\ \J{fun2}}{\angles{a, f}\ \J{cmd}} \qquad
-	\RULE{a\ \J{addr2} \qquad f\ \J{fun2}}{\angles{a, f}\ \J{cmd}} \\
-	\RULE{\arg{f}\ \J{fun0}}{\arg{f}\ \J{fun}} \qquad
-	\RULE{\arg{f}\ \J{fun1}}{\arg{f}\ \J{fun}} \qquad
-	\RULE{\arg{f}\ \J{fun2}}{\arg{f}\ \J{fun}}
+	\RULE{\arg{f}\ \J{fun0}}{f\ \J{cmd}} \qquad
+	\RULE{\arg{f}\ \J{fun1}}{f\ \J{cmd}} \qquad
+	\RULE{\arg{f}\ \J{fun2}}{f\ \J{cmd}} \\
+	\RULE{a\ \J{basead} \qquad f\ \J{fun1}}{\angles{a, f}\ \J{cmd}} \qquad
+	\RULE{a\ \J{basead} \qquad f\ \J{fun1}}{\angles{a, \cmd{!}, f}\ \J{cmd}} \\
+	\RULE{a\ \J{basead} \qquad f\ \J{fun2}}{\angles{a, f}\ \J{cmd}} \qquad
+	\RULE{a\ \J{basead} \qquad f\ \J{fun2}}{\angles{a, \cmd{!}, f}\ \J{cmd}} \\
+	\RULE{a_1\ \J{basead} \qquad a_2\ \J{basead} \qquad f\ \J{fun2}}{\angles{a_1, a_2, f}\ \J{cmd}} \qquad
+	\RULE{a_1\ \J{basead} \qquad a_2\ \J{basead} \qquad f\ \J{fun2}}{\angles{a_1, a_2, \cmd{!}, f}\ \J{cmd}}
 \end{gather*}
+%
 Commands can be nested in blocks:
 \begin{gather*}
 	\RULE{\arg{cmds}\ \J{sed}}{\cmd{\{} \arg{cmds} \cmd{\}}\ \J{fun2}}
 \end{gather*}
+%
 Functions that (optionally) take a label:
 \begin{gather*}
 	\RULE{\arg{label}\ \J{label}}{\cmd{:}\ \arg{label}\ \J{fun0}} \qquad
@@ -64,6 +70,7 @@ Functions that (optionally) take a label:
 	\RULE{\arg{label}\ \J{label}}{\cmd{t}\ \arg{label}\ \J{fun2}} \qquad
 	\RULE{}{\cmd{t}\ \J{fun2}}
 \end{gather*}
+%
 Simple functions that take no arguments: (Note that \cmd{q} and \cmd{=} are 1-address functions.)
 \begin{gather*}
 	\RULE{}{\cmd{d}\ \J{fun2}} \qquad
@@ -80,45 +87,58 @@ Simple functions that take no arguments: (Note that \cmd{q} and \cmd{=} are 1-ad
 	\RULE{}{\cmd{x}\ \J{fun2}} \qquad
 	\RULE{}{\cmd{=}\ \J{fun1}}
 \end{gather*}
+%
 Some commands take a text argument:
 \begin{gather*}
 	\RULE{\arg{text}\ \J{str}}{\cmd{a}\ \arg{text}\ \J{fun1}} \qquad
 	\RULE{\arg{text}\ \J{str}}{\cmd{i}\ \arg{text}\ \J{fun1}} \qquad
 	\RULE{\arg{text}\ \J{str}}{\cmd{c}\ \arg{text}\ \J{fun2}}
 \end{gather*}
-Finally, the substitution commands:
+%
+Finally, the text manipulation commands:
 \begin{gather*}
-	\RULE{\arg{pat}\ \J{regex} \qquad \arg{repl}\ \J{str} \qquad \arg{flags}\ \J{sflags}}{\cmd{s}\ \arg{pat}\ \arg{repl}\ \arg{sflags}\ \J{fun2}} \qquad
+	\RULE{\arg{pat}\ \J{regex} \qquad \arg{repl}\ \J{regrepl} \qquad \arg{flags}\ \J{sflags}}{\cmd{s}\ \cmd{/}\arg{pat}\cmd{/}\ \arg{repl}\ \arg{sflags}\ \J{fun2}} \qquad
 	\RULE{\arg{pat}\ \J{str} \qquad \arg{repl}\ \J{str}}{\cmd{y}\ \arg{pat}\ \arg{repl}\ \J{fun2}}
 \end{gather*}
-Addresses are specified as follows:
+%
+Regular expressions are a sub-language, mostly following the POSIX BRE specification\footnote{\url{https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap09.html}} (without collating features; note that bracket expressions (a.k.a.\ character classes) just accept a list of characters in this grammar, which is only a loss of convenience and not of expressivity):
 \begin{gather*}
-	\RULE{}{\epsilon\ \J{addr}} \qquad
-	\RULE{\arg{addr}\ \J{addr1}}{\arg{addr}\ \J{addr}} \qquad
-	\RULE{\arg{addr}\ \J{addr2}}{\arg{addr}\ \J{addr}} \\
-	\RULE{\arg{addr}\ \J{basead} \qquad \arg{neg}\ \J{adneg}}{\arg{addr}\ \arg{neg}\ \J{addr1}} \qquad
-	\RULE{}{\epsilon\ \J{addr1}} \\
-	\RULE{a_1\ \J{basead} \qquad a_2\ \J{basead} \qquad \arg{neg}\ \J{adneg}}{a_1,a_2\ \arg{neg}\ \J{addr2}} \qquad
-	\RULE{\arg{addr}\ \J{addr1}}{\arg{addr}\ \J{addr2}} \\
+	\RULE{}{\epsilon\ \J{regex}} \qquad
+	\RULE{\arg{item}\ \J{regitem} \qquad \arg{r}\ \J{regex}}{\arg{item}\ \arg{r}\ \J{regex}} \\
+	\RULE{c\ \J{char}}{c\ \J{regitem}} \qquad
+	\RULE{\arg{chars}\ \J{str}}{\cmd{[} \arg{chars} \cmd{]}\ \J{regitem}} \qquad
+	\RULE{n \in \mathbb{Z}_{\geq0}}{\cmd{\textbackslash} n\ \J{regitem}} \qquad
+	\RULE{}{\sanchor\ \J{regitem}} \qquad
+	\RULE{}{\eanchor\ \J{regitem}} \\
+	\RULE{\arg{reg}\ \J{regex}}{(\arg{reg})\ \J{regitem}} \qquad
+	\RULE{\arg{reg}\ \J{regex}}{\arg{reg}^*\ \J{regitem}} \qquad
+	\RULE{\arg{reg}\ \J{regex} \qquad n,m \in \mathbb{Z}_{\geq0}}{\arg{reg}\cmd{\{}n\cmd{,}m\cmd{\}}\ \J{regitem}} \qquad
+\end{gather*}
+%
+Replacement strings in an \cmd{s} command contain backreferences:
+\begin{gather*}
+	\RULE{}{\epsilon\ \J{regrepl}} \qquad
+	\RULE{c\ \J{char} \qquad s\ \J{regrepl}}{c\ s\ \J{regrepl}} \qquad
+	\RULE{n \in \mathbb{Z}_{\geq0} \qquad s\ \J{regrepl}}{\cmd{\textbackslash}n\ s\ \J{regrepl}} \qquad
+	\RULE{s\ \J{regrepl}}{\cmd{\&}\ s\ \J{regrepl}}
+\end{gather*}
+%
+Base addresses are specified as follows:
+\begin{gather*}
 	\RULE{n \in \mathbb{Z}_{\geq 1}}{n\ \J{basead}} \qquad
 	\RULE{}{\cmd{\$}\ \J{basead}} \qquad
 	\RULE{\arg{reg}\ \J{regex}}{\arg{reg}\ \J{basead}} \qquad
-	\RULE{}{\epsilon\ \J{adneg}} \qquad
-	\RULE{}{\cmd{!}\ \J{adneg}}
 \end{gather*}
-Where the following auxiliary judgements are used:
+%
+The following auxiliary judgements are used:
 \begin{gather*}
-	\RULE{}{\epsilon\ \J{str}} \qquad
-	\RULE{c\ \J{char} \qquad s\ \J{str}}{c\ s\ \J{str}} \qquad
-	\RULE{n \in \mathbb{Z} \qquad 0 \leq n \leq 255}{n\ \J{char}} \\
-	\RULE{}{\cmd{g}\ \J{sflag}} \qquad
-	\RULE{}{\cmd{p}\ \J{sflag}} \qquad
-	\RULE{n \in \mathbb{Z}_{\geq 1}}{n\ \J{sflag}} \qquad
-	\RULE{}{\epsilon\ \J{sflags}} \qquad
-	\RULE{f\ \J{sflag} \qquad r\ \J{sflags}}{f\ r\ \J{sflags}}
+	\RULE{}{\code{""}\ \J{str}} \qquad
+	\RULE{c\ \J{char} \qquad s\ \J{str}}{(c : s)\ \J{str}} \\
+	\RULE{\exists n : (n \in \mathbb{Z}_{\geq1} \land \arg{flags} \in \{\epsilon,\, n,\, \cmd{g},\, \cmd{p},\, n\ \cmd{p},\, \cmd{p}\ n,\, \cmd{g}\ \cmd{p},\, \cmd{p}\ \cmd{g}\})}{\arg{flags}\ \J{sflags}}
 \end{gather*}
+%
 The ``label'' judgement defines a set of values on which only an equivalence relation (equality) is required.
-The ``regex'' judgement defines the set of accepted regular expressions, which for now is kept abstract.
+The ``char'' judgement defines the set of characters, which has no particular requirements except that this set needs to be finite.
 
 
 \end{document}
