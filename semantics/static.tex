@@ -87,7 +87,7 @@ A program is regex-correct if each address regular expression is regex-correct' 
 	\RULE{}{\epsilon\ \J{rc}} \qquad
 	\RULE{\arg{a_1}\ \J{rc'}\ \arg{n} \qquad (\arg{fun}\ \arg{s})\ \J{rc}}{(\angles{\arg{a_1}, (\cmd{!},)^?, \arg{fun}}\ s)\ \J{rc}} \qquad
 	\RULE{\arg{a_1}\ \J{rc'}\ \arg{n} \qquad \arg{a_2}\ \J{rc'}\ \arg{m} \qquad (\arg{fun}\ s)\ \J{rc}}{(\angles{\arg{a_1}, \arg{a_2}, (\cmd{!},)^?, \arg{fun}}\ s)\ \J{rc}} \\
-	\RULE{(\cmd{s}\ \arg{reg}\ \arg{repl}\ \arg{flags})\ \J{sc}}{((\cmd{s}\ \arg{reg}\ \arg{repl}\ \arg{flags})\ \arg{s})\ \J{rc}} \qquad
+	\RULE{(\cmd{s}\ \arg{reg}\ \arg{repl}\ \arg{flags})\ \J{sc} \qquad s\ \J{rc}}{((\cmd{s}\ \arg{reg}\ \arg{repl}\ \arg{flags})\ \arg{s})\ \J{rc}} \qquad
 	\RULE{s\ \J{rc}}{(\text{\underline{anything else}}\ s)\ \J{rc}}
 \end{gather*}
 The element ``$(\cmd{!},)^?$'' should be understood to be an optional ``\cmd{!},''; i.e.\ those rules matches both negated and non-negated addresses.
