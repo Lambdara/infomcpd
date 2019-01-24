@@ -45,7 +45,7 @@ data Regex = RegChar Char
            | RegAnchorLeft
            | RegAnchorRight
            | RegConcat [Regex]
-           | RegGroup Regex
+           | RegGroup Regex Int
            | RegStar Regex
            | RegRep Regex Int (Maybe Int)
   deriving (Show, Eq)

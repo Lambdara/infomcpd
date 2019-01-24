@@ -1,4 +1,4 @@
-module Parser(parseProgram) where
+module Parser(parseProgram,pRegexTill) where
 
 import Control.Monad
 import Data.Char
@@ -161,7 +161,7 @@ pRegexTill delim = pRegConcat (char delim)
         pRegStar base <|> pRegRep base <|> return base
     pRegAnchorLeft = char '^' >> return RegAnchorLeft
     pRegAnchorRight = char '$' >> return RegAnchorRight
-    pRegGroup = RegGroup <$> (string "\\(" >> pRegConcat (string "\\)"))
+    pRegGroup = string "\\(" >> pRegConcat (string "\\)") >>= \r -> return (RegGroup r 0)
     pRegBackref = char '\\' >> (RegBackref . read . pure <$> digit)
     pRegChar = RegChar <$> ((try (string "\\n") >> return '\n') <|> satisfy (/= '\\'))
     pRegStar :: Regex -> Parsec String () Regex
