@@ -128,8 +128,8 @@ pText = do
     void $ lookAhead finalTerm
     return $ intercalate "\n" lns
 
-pSArgs :: Parser (Regex, String)
-pSArgs = pDelimitedPair pRegexTill pStringTill
+pSArgs :: Parser (Regex, RegRepl)
+pSArgs = pDelimitedPair pRegexTill pRegReplTill
 
 pYArgs :: Parser (String, String)
 pYArgs = pDelimitedPair pStringTill pStringTill
@@ -151,7 +151,7 @@ pStrictDelimited p = do
     return a
 
 pRegexTill :: Char -> Parser Regex
-pRegexTill delim = pRegConcat (char delim)
+pRegexTill delim = pRegConcat (lookAhead $ char delim)
   where
     pRegConcat :: Parsec String () a -> Parsec String () Regex
     pRegConcat delimp = RegConcat <$> manyTill pSimpleRE (try delimp)
@@ -190,6 +190,14 @@ pRegexTill delim = pRegConcat (char delim)
         void $ char '-'
         b <- satisfy (/= ']')
         return $ RCRange a b
+
+pRegReplTill :: Char -> Parser RegRepl
+pRegReplTill delim = RegRepl <$> manyTill pItem (lookAhead $ char delim)
+  where
+    pItem = (try (string "\\n") >> return (RRChar '\n')) <|>
+            (char '\\' >> digit >>= \c -> return (RRBackref (read [c]))) <|>
+            (char '&' >> return (RRBackref 0)) <|>
+            (RRChar <$> anyChar)
 
 pStringTill :: Char -> Parser String
 pStringTill delim = do
