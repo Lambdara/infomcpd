@@ -1,12 +1,8 @@
 module Regex where
 
-import Parser -- This is here just for debug purposes. If this is still here in the pull request then you should not merge xd
 import AST
 import Text.Parsec
 
--- This is here just for debug purposes. If this is still here in the pull request then you should not merge xd
-testRegex :: Regex
-Right testRegex = parse (pRegexTill ' ') "" "^\\(a*\\)b\\1 "
 
 regex :: Regex -> String -> Maybe (String, String, [String])
 regex reg str =
