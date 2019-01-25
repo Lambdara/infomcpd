@@ -200,6 +200,7 @@ pRegReplTill :: Char -> Parser RegRepl
 pRegReplTill delim = RegRepl <$> manyTill pItem (lookAhead $ char delim)
   where
     pItem = (try (string "\\n") >> return (RRChar '\n')) <|>
+            (try $ char '\\' >> satisfy (not . isAlphaNum) >>= \c -> return (RRChar c)) <|>
             (char '\\' >> digit >>= \c -> return (RRBackref (read [c]))) <|>
             (char '&' >> return (RRBackref 0)) <|>
             (RRChar <$> anyChar)
