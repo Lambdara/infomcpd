@@ -27,12 +27,12 @@ regtry reg str pre groups =
 
 regpp :: Regex -> Int -> (Regex, Int)
 regpp (RegConcat []) n = (RegConcat [], n)
-regpp (RegConcat (RegGroup r1 _ : rs)) n = (RegConcat (RegGroup r1' (n+1) : r'),m')
-  where (RegConcat r', m') = regpp (RegConcat rs) m
+regpp (RegConcat (RegGroup r1 _ : rs)) n = (RegConcat (RegGroup r1' (n+1) : rs'),m')
+  where (RegConcat rs', m') = regpp (RegConcat rs) m
         (r1',m) = regpp r1 (n+1)
 regpp (RegConcat (RegConcat rs1 : rs)) n = regpp (RegConcat (rs1 ++ rs)) n
-regpp (RegConcat (x:rs)) n = (RegConcat (x:r'), n')
-  where (RegConcat r', n') = regpp (RegConcat rs) n
+regpp (RegConcat (x:rs)) n = (RegConcat (x:rs'), n')
+  where (RegConcat rs', n') = regpp (RegConcat rs) n
 regpp _ _ = error "regpp expects RegConcat"
 
 r :: Regex -> String -> Bool -> [String] -> Maybe (String, String, [String])
