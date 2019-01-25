@@ -165,7 +165,10 @@ pRegexTill delim = pRegConcat (lookAhead $ char delim)
     pRegGroup = try (string "\\(") >> pRegConcat (string "\\)") >>= \r -> return (RegGroup r 0)
     pRegBackref = try $ char '\\' >> (RegBackref . read . pure <$> digit)
     pRegAny = char '.' >> return RegAny
-    pRegChar = RegChar <$> ((try (string "\\n") >> return '\n') <|> satisfy (/= '\\'))
+    pRegChar = RegChar <$>
+        ((try (string "\\n") >> return '\n') <|>
+         try (char '\\' >> oneOf ".[$") <|>
+         satisfy (/= '\\'))
     pRegStar :: Regex -> Parsec String () Regex
     pRegStar r = char '*' >> return (RegStar r)
     pRegRep :: Regex -> Parsec String () Regex
