@@ -80,9 +80,9 @@ r (RegConcat (RegGroup r1 n : rs)) s begin groups =
     (post, match2, groups') <- r (RegConcat rs) post1 (begin && match1 == "") (replace groups1 (n-1) match1)
     return (post, match1 ++ match2, groups')
   where
-    replace (_:list) 0 content = content : list
-    replace (x:list) index content = x : replace list (index - 1) content
-    replace _ _ _ = error "No match in r.replace"
+    replace l idx val =
+      let (l1, _ : l2) = splitAt idx l
+      in l1 ++ val : l2
 r (RegConcat (RegRep _ 0 (Just 0) : rs)) s begin groups =
   r (RegConcat rs) s begin groups
 r (RegConcat (RegRep r1 0 (Just m) : rs)) s begin groups =
