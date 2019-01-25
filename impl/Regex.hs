@@ -97,12 +97,27 @@ r (RegConcat (RegRep r1 0 Nothing : rs)) s begin groups =
 r (RegConcat (RegRep r1 n Nothing : rs)) s begin groups =
   r (RegConcat (r1 : RegRep r1 (n-1) Nothing : rs)) s begin groups
 r (RegConcat (RegStar r1 : rs)) s begin groups =
-  if result /= Nothing
-  then result
-  else result'
-  where
-    result = r (RegConcat (r1 : RegStar r1 : rs)) s begin groups
-    result' = r (RegConcat rs) s begin groups
-r _ _ _ _ = Nothing
+  case r r1 s begin groups of
+    Just (post, match, groups')
+      | match /= "",
+        Just (post', match', groups'') <- r' r1 (RegConcat rs) post groups' ->
+          Just (post', match ++ match', groups'')
+    Just (_, "", groups') ->
+      r (RegConcat rs) s begin groups'
+    Nothing ->
+      r (RegConcat rs) s begin groups
+    _ ->
+      Nothing
+r (RegConcat (_ : _)) _ _ _ = Nothing
+r ritem s begin groups = r (RegConcat [ritem]) s begin groups
+
+r' :: Regex -> Regex -> String -> [String] -> Maybe (String, String, [String])
+r' r1 rs s groups
+  | Just (post, match, groups') <- r r1 s False groups,
+    match /= "",
+    Just (post', match', groups'') <- r' r1 rs post groups' =
+      Just (post', match ++ match', groups'')
+  | otherwise =
+      r rs s False groups
 
 -- vim: set sw=2 ts=2 et:
