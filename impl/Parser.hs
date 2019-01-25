@@ -167,7 +167,7 @@ pRegexTill delim = pRegConcat (lookAhead $ char delim)
     pRegAny = char '.' >> return RegAny
     pRegChar = RegChar <$>
         ((try (string "\\n") >> return '\n') <|>
-         try (char '\\' >> oneOf ".[$") <|>
+         try (char '\\' >> (satisfy (not . isAlphaNum))) <|>
          satisfy (/= '\\'))
     pRegStar :: Regex -> Parsec String () Regex
     pRegStar r = char '*' >> return (RegStar r)
