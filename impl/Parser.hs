@@ -173,12 +173,12 @@ pRegexTill delim = pRegConcat (lookAhead $ char delim)
     pRegStar r = char '*' >> return (RegStar r)
     pRegRep :: Regex -> Parsec String () Regex
     pRegRep r = do
-        void $ char '{'
+        void $ try (string "\\{")
         n <- read <$> many1 digit
-        choice [char '}' >> return (RegRep r n (Just n))
-               ,char ',' >> choice [char '}' >> return (RegRep r n Nothing)
+        choice [try (string "\\}") >> return (RegRep r n (Just n))
+               ,char ',' >> choice [try (string "\\}") >> return (RegRep r n Nothing)
                                    ,do m <- read <$> many1 digit
-                                       void $ char '}'
+                                       void $ string "\\}"
                                        return (RegRep r n (Just m))]]
 
     pRegClass = do
