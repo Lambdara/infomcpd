@@ -58,12 +58,14 @@ r (RegConcat (RegClass polarity rcis : rs)) (c:cs) _ groups =
     rcicheck (RCRange c1 c2 : rcis') ch =
       ch `elem` [c1 .. c2] || rcicheck rcis' ch
 r (RegConcat (RegBackref n : rs)) s begin groups =
-  do
+  if s1 == grp
+  then do
     (post,match,groups') <- r (RegConcat rs) s2 (begin && null s1) groups
     return (post, s1 ++ match, groups')
+  else Nothing
   where
-    s1 = groups !! (n-1)
-    s2 = drop (length s1) s
+    grp = groups !! (n - 1)
+    (s1, s2) = splitAt (length grp) s
 r (RegConcat (RegAnchorLeft : rs)) s begin groups =
   if begin
   then r (RegConcat rs) s begin groups
