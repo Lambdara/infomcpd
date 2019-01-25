@@ -3,16 +3,17 @@ module Regex where
 import AST
 import Text.Parsec
 
+type CapGroups = [Maybe String]
 
-regex :: Regex -> String -> Maybe (String, String, [String])
+regex :: Regex -> String -> Maybe (String, String, CapGroups)
 regex reg str =
   case result of
-    Just (pre,post,match,groups) -> Just (pre, post, match:groups)
+    Just (pre,post,match,groups) -> Just (pre, post, Just match : groups)
     Nothing -> Nothing
-  where result = regtry reg' str "" (replicate n "")
+  where result = regtry reg' str "" (replicate n Nothing)
         (reg',n) = regpp reg 0
 
-regtry :: Regex -> String -> String -> [String] -> Maybe (String, String, String, [String])
+regtry :: Regex -> String -> String -> CapGroups -> Maybe (String, String, String, CapGroups)
 regtry reg str pre groups =
   case result of
     Just (post, match, groups') -> Just (pre, post, match, groups')
@@ -38,7 +39,7 @@ regpp (RegConcat (x:rs)) n = (RegConcat (x:rs'), n')
 regpp ritem n = (ritem', n')
   where (RegConcat [ritem'], n') = regpp (RegConcat [ritem]) n
 
-r :: Regex -> String -> Bool -> [String] -> Maybe (String, String, [String])
+r :: Regex -> String -> Bool -> CapGroups -> Maybe (String, String, CapGroups)
 r (RegConcat []) s _ groups = Just (s,"",groups)
 r (RegConcat (RegChar c : rs)) (c':cs) _ groups =
   if c == c'
@@ -60,15 +61,16 @@ r (RegConcat (RegClass polarity rcis : rs)) (c:cs) _ groups =
       c1 == ch || rcicheck rcis' ch
     rcicheck (RCRange c1 c2 : rcis') ch =
       ch `elem` [c1 .. c2] || rcicheck rcis' ch
-r (RegConcat (RegBackref n : rs)) s begin groups =
-  if s1 == grp
-  then do
-    (post,match,groups') <- r (RegConcat rs) s2 (begin && null s1) groups
-    return (post, s1 ++ match, groups')
-  else Nothing
-  where
-    grp = groups !! (n - 1)
-    (s1, s2) = splitAt (length grp) s
+r (RegConcat (RegBackref n : rs)) s begin groups
+  | Just grp <- groups !! (n - 1) =
+      let (s1, s2) = splitAt (length grp) s
+      in if s1 == grp
+         then do
+           (post,match,groups') <- r (RegConcat rs) s2 (begin && null s1) groups
+           return (post, s1 ++ match, groups')
+         else Nothing
+  | otherwise =
+      Nothing
 r (RegConcat (RegAnchorLeft : rs)) s begin groups =
   if begin
   then r (RegConcat rs) s begin groups
@@ -80,7 +82,7 @@ r (RegConcat (RegAnchorRight : rs)) s begin groups =
 r (RegConcat (RegGroup r1 n : rs)) s begin groups =
   do
     (post1, match1, groups1) <- r r1 s begin groups
-    (post, match2, groups') <- r (RegConcat rs) post1 (begin && match1 == "") (replace groups1 (n-1) match1)
+    (post, match2, groups') <- r (RegConcat rs) post1 (begin && match1 == "") (replace groups1 (n-1) (Just match1))
     return (post, match1 ++ match2, groups')
   where
     replace l idx val =
@@ -114,7 +116,7 @@ r (RegConcat (RegStar r1 : rs)) s begin groups =
 r (RegConcat (_ : _)) _ _ _ = Nothing
 r ritem s begin groups = r (RegConcat [ritem]) s begin groups
 
-r' :: Regex -> Regex -> String -> [String] -> Maybe (String, String, [String])
+r' :: Regex -> Regex -> String -> CapGroups -> Maybe (String, String, CapGroups)
 r' r1 rs s groups
   | Just (post, match, groups') <- r r1 s False groups,
     match /= "",
