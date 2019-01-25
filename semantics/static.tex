@@ -13,12 +13,17 @@
 \usepackage{cleveref}
 \usepackage{float}
 
-\newcommand\RULE[2]{\begin{array}{c} #1 \\ \hline #2 \end{array}}
 \newcommand\SED{\emph{sed}}
-% a judgement
-\newcommand\J[1]{\ensuremath{\text{ #1}}}
+\newcommand\RULE[3][]{\begin{array}{c} #2 \\ \hline #3 \end{array}}
+\newcommand\data[1]{\ensuremath{\text{#1}}}
+\newcommand\field[1]{\ensuremath{\text{#1}}}
+\newcommand\J[1]{\ensuremath{\textbf{#1}}}
 \newcommand\cmd[1]{\ensuremath{\text{\texttt{#1}}}}
+\newcommand\code[1]{\ensuremath{\text{\texttt{#1}}}}
 \renewcommand\arg[1]{\ensuremath{\mathit{#1}}}
+\newcommand\angles[1]{\langle #1 \rangle}
+\newcommand\sanchor{\cmd{\ensuremath{{}^\land}}}
+\newcommand\eanchor{\cmd{\$}}
 
 % Swap \epsilon and \varepsilon
 \let\oldepsilon\epsilon \let\epsilon\varepsilon \let\varepsilon\oldepsilon
@@ -29,63 +34,98 @@
 
 \section{Static semantics}
 
-Define the following abstraction for \SED{} programs:
-\begin{gather*}
-	\RULE{}{\epsilon \J{sed}} \qquad
-	\RULE{c \J{cmd} \qquad s \J{sed}}{c\ s \J{sed}} \\
-	\RULE{}{\cmd{b}\ \arg{\ell} \J{cmd}} \qquad
-	\RULE{}{\cmd{:}\ \arg{\ell} \J{cmd}} \qquad
-	\RULE{s \J{sed}}{\cmd{\{}\ s\ \cmd{\}} \J{cmd}} \qquad
-	\RULE{\arg{pat} \J{ypat} \qquad \arg{repl} \J{str}}{\cmd{y}\ \arg{pat}\ \arg{repl} \J{cmd}} \qquad
-	\RULE{}{\cmd{C} \J{cmd}}
-\end{gather*}
-where \cmd{:}, \cmd{\{}\ldots\!\cmd{\}} and \cmd{y} (for `ypat' and `str', see the grammar) model their counterparts in the actual \SED{} grammar, \cmd{b} models all label-referencing commands (\cmd{b} and \cmd{t}), and \cmd{C} is any other command.
-We abstract over addresses; these are not relevant in the static checking.
-
-\textbf{TODO: Need to add rules that prove the above judgements for the relevant commands in the actual grammar, so that the ``intuitive'' description above is unnecessary (and only useful for auxiliary description). Then `cmd' and `sed' need to be renamed in this document so as to not conflict with the judgements in the full grammar.}
-
 We say a \SED{} program is correct according to the static semantics if the `ok' judgement can be proven of it.
-This is true if it is both \textbf{l}abel-\textbf{c}orrect and \textbf{y}-\textbf{c}orrect:
+This is true if it is \textbf{l}abel-\textbf{c}orrect, \textbf{y}-\textbf{c}orrect and \textbf{r}egex-\textbf{c}orrect:
 \begin{gather*}
-	\RULE{s \J{sed} \qquad s \J{lc} \qquad s \J{yc}}{s \J{ok}}
+	\RULE{s\ \J{sed} \qquad s\ \J{lc} \qquad s\ \J{yc} \qquad s\ \J{rc}}{s\ \J{ok}}
 \end{gather*}
+%
 A program is label-correct if it refers only to labels defined elsewhere in the program.
 \begin{gather*}
-	\RULE{s \J{labels}\ L \qquad L \vdash s \J{lc'}}{s \J{lc}}
+	\RULE{s\ \J{labels}\ L \qquad L \vdash s\ \J{lc'}}{s\ \J{lc}}
 \end{gather*}
-This we do by first collecting all the labels:
-\begin{gather*}
-	\RULE{}{\epsilon \J{labels}\ \emptyset} \qquad
-	\RULE{s \J{labels}\ L \qquad \ell \not\in L}{(\cmd{:}\ \ell)\ s \J{labels}\ \{\ell\} \cup L} \qquad
-	\RULE{s_1\ s \J{labels}\ L}{\cmd{\{} s_1 \cmd{\}}\ s \J{labels}\ L} \\
 %
-	\RULE{s \J{labels}\ L}{(\cmd{b}\ \ell)\ s \J{labels}\ L} \qquad
-	\RULE{s \J{labels}\ L}{(\cmd{y}\ \arg{pat}\ \arg{repl})\ s \J{labels}\ L} \qquad
-	\RULE{s \J{labels}\ L}{\cmd{C}\ s \J{labels}\ L}
+This we do by first collecting all the labels (and verifying that they are unique):
+\begin{gather*}
+	\RULE{}{\epsilon\ \J{labels}\ \emptyset} \qquad
+	\RULE{s\ \J{labels}\ L \qquad \ell \not\in L}{((\cmd{:}\ \ell)\ s)\ \J{labels}\ \{\ell\} \cup L} \\
+%
+	\RULE{(s_1\ s)\ \J{labels}\ L}{(\cmd{\{} s_1 \cmd{\}}\ s)\ \J{labels}\ L} \qquad
+	\RULE{(\arg{fun}\ s)\ \J{labels}\ L}{(\angles{\ldots, \arg{fun}}\ s)\ \J{labels}\ L} \qquad
+	\RULE{s\ \J{labels}\ L}{(\text{\underline{anything else}}\ s)\ \J{labels}\ L}
 \end{gather*}
+The ``$\angles{\ldots, \arg{fun}}$'' should be understood to match any command with an address of any form (1- or 2-part, and negated or not negated) and function \arg{fun}.
+The ``\underline{anything else}'' should be understood to match anything that is not a label, a block or a command with an address.
+
 Then, we verify that all label-referencing instructions only refer to labels that we have collected:
 \begin{gather*}
-	\RULE{}{L \vdash \epsilon \J{lc'}} \qquad
-	\RULE{\ell \in L \qquad L \vdash s \J{lc'}}{L \vdash (\cmd{b}\ \ell)\ s \J{lc'}} \qquad
-	\RULE{L \vdash s_1 \J{lc'} \qquad L \vdash s \J{lc'}}{L \vdash \cmd{\{} s_1 \cmd{\}}\ s \J{lc'}} \\
+	\RULE{}{L \vdash \epsilon\ \J{lc'}} \qquad
+	\RULE{\ell \in L \qquad L \vdash s\ \J{lc'}}{L \vdash (\cmd{b}\ \ell)\ s\ \J{lc'}} \qquad
+	\RULE{\ell \in L \qquad L \vdash s\ \J{lc'}}{L \vdash (\cmd{t}\ \ell)\ s\ \J{lc'}} \\
 %
-	\RULE{L \vdash s \J{lc'}}{L \vdash (\cmd{:}\ \ell)\ s \J{lc'}} \qquad
-	\RULE{L \vdash s \J{lc'}}{L \vdash (\cmd{y}\ \arg{pat}\ \arg{repl})\ s \J{lc'}} \qquad
-	\RULE{L \vdash s \J{lc'}}{L \vdash \cmd{C}\ s \J{lc'}}
+	\RULE{L \vdash s_1\ \J{lc'} \qquad L \vdash s\ \J{lc'}}{L \vdash \cmd{\{} s_1 \cmd{\}}\ s\ \J{lc'}} \qquad
+	\RULE{L \vdash \arg{fun}\ s\ \J{lc'}}{L \vdash \angles{\ldots, \arg{fun}}\ s\ \J{lc'}} \qquad
+	\RULE{L \vdash s\ \J{lc'}}{L \vdash \text{\underline{anything else}}\ s\ \J{lc'}}
 \end{gather*}
+The ``\underline{anything else}'' should be understood to match anything that is not a \cmd{b} or \cmd{t} command, a block, or a command with an address.
+
 A program is y-correct if for each \cmd{y}-instruction in the program, the pattern and replacement have equal length and the pattern does not contain duplicate characters:
 \begin{gather*}
-	\RULE{}{\epsilon \J{yc}} \qquad
-	\RULE{|\arg{pat}| = |\arg{repl}| \qquad \arg{pat} \J{nodup} \qquad s \J{yc}}{(\cmd{y}\ \arg{pat}\ \arg{repl})\ s \J{yc}} \qquad
-	\RULE{s_1 \J{yc} \qquad s \J{yc}}{\cmd{\{} s_1 \cmd{\}}\ s \J{yc}} \\
+	\RULE{}{\epsilon\ \J{yc}} \qquad
+	\RULE{|\arg{pat}| = |\arg{repl}| \qquad \arg{pat}\ \J{nodup} \qquad s\ \J{yc}}{((\cmd{y}\ \arg{pat}\ \arg{repl})\ s)\ \J{yc}} \\
 %
-	\RULE{s \J{yc}}{(\cmd{b}\ \ell)\ s \J{yc}} \qquad
-	\RULE{s \J{yc}}{(\cmd{:}\ \ell)\ s \J{yc}} \qquad
-	\RULE{s \J{yc}}{\cmd{C}\ s \J{yc}} \\
-	\RULE{}{\epsilon \J{nodup}} \qquad
-	\RULE{c\ s \J{str} \qquad c \J{notin}\ s \qquad s \J{nodup}}{c\ s \J{nodup}} \\
-	\RULE{c \J{char}}{c \J{notin}\ \epsilon} \qquad
-	\RULE{c \J{char} \qquad c'\ s \J{str} \qquad c \not= c' \qquad c \J{notin}\ s}{c \J{notin}\ c'\ s}
+	\RULE{s_1\ \J{yc} \qquad s\ \J{yc}}{(\cmd{\{} s_1 \cmd{\}}\ s)\ \J{yc}} \qquad
+	\RULE{(\arg{fun}\ s)\ \J{yc}}{(\angles{\ldots, \arg{fun}}\ s)\ \J{yc}} \\
+	\RULE{}{\epsilon\ \J{nodup}} \qquad
+	\RULE{(c\ s)\ \J{str} \qquad c\ \J{notin}\ s \qquad s\ \J{nodup}}{(c\ s)\ \J{nodup}} \\
+	\RULE{c\ \J{char}}{c\ \J{notin}\ \epsilon} \qquad
+	\RULE{c\ \J{char} \qquad (c'\ s)\ \J{str} \qquad c \not= c' \qquad c\ \J{notin}\ s}{c\ \J{notin}\ (c'\ s)}
+\end{gather*}
+%
+A program is regex-correct if each address regular expression is regex-correct' (with any number of capture groups) and each \cmd{s} command is \textbf{s}-\textbf{c}orrect.
+Regexen in addresses are checked via the \J{ac} judgement.
+\begin{gather*}
+	\RULE{}{\epsilon\ \J{rc}} \qquad
+	\RULE{\arg{a_1}\ \J{ac}\ \arg{n} \qquad (\arg{fun}\ \arg{s})\ \J{rc}}{(\angles{\arg{a_1}, (\cmd{!},)^?, \arg{fun}}\ s)\ \J{rc}} \qquad
+	\RULE{\arg{a_1}\ \J{ac}\ \arg{n} \qquad \arg{a_2}\ \J{ac}\ \arg{m} \qquad (\arg{fun}\ s)\ \J{rc}}{(\angles{\arg{a_1}, \arg{a_2}, (\cmd{!},)^?, \arg{fun}}\ s)\ \J{rc}} \\
+	\RULE{(\cmd{s}\ \arg{reg}\ \arg{repl}\ \arg{flags})\ \J{sc} \qquad s\ \J{rc}}{((\cmd{s}\ \arg{reg}\ \arg{repl}\ \arg{flags})\ \arg{s})\ \J{rc}} \qquad
+	\RULE{s\ \J{rc}}{(\text{\underline{anything else}}\ s)\ \J{rc}}
+\end{gather*}
+The element ``$(\cmd{!},)^?$'' should be understood to be an optional ``\cmd{!},''; i.e.\ those rules matches both negated and non-negated addresses.
+The ``\underline{anything else}'' should be understood to match anything that is not a command with an address or an \cmd{s} command.
+%
+An address is correct if the possible regex contained in it is correct.
+\begin{gather*}
+	\RULE{\arg{n} \in \mathbb{Z}}{\arg{n}\ \J{ac}} \qquad
+	\RULE{}{\cmd{\$}\ \J{ac}} \qquad
+	\RULE{\arg{reg}\ \J{rc'}}{\cmd{/}\arg{reg}\cmd{/}\ \J{ac}}
+\end{gather*}
+%
+An \cmd{s} command is s-correct if its regular expression is regex-correct' and the backreferences in its replacement only refer to existing capture groups.
+The \J{rc'} judgement checks regex integrity and returns the number of capture groups, which the \J{replc} (\textbf{repl}acement-\textbf{c}orrect) judgement uses to verify the replacement.
+\begin{gather*}
+	\RULE{\arg{reg}\ \J{rc'}\ \arg{n} \qquad \arg{repl}\ \J{replc}\ n}{(\cmd{s}\ \arg{reg}\ \arg{repl}\ \arg{flags})\ \J{sc}}
+\end{gather*}
+%
+The \J{rc'} judgement loops over the regular expression \emph{backwards}, and verifies backreferences and interval-expressions.
+\begin{gather*}
+	\RULE{}{\epsilon\ \J{rc'}\ 0} \qquad
+	\RULE{r\ \J{rc'}\ n \qquad k \leq n}{(r\ \cmd{\textbackslash} k)\ \J{rc'}\ n} \qquad
+	\RULE{(r\ \arg{r_1})\ \J{rc'}\ n}{(r\ (\arg{r_1}))\ \J{rc'}\ (n + 1)} \qquad
+	\RULE{(r\ \arg{r_1})\ \J{rc'}\ n \qquad \arg{k_1} \leq \arg{k_2}}{(r\ \arg{r_1}\cmd{\{}\arg{k_1}\cmd{,}\arg{k_2}\cmd{\}})\ \J{rc'}\ n} \\
+	\RULE{c\ \J{char} \qquad r\ \J{rc'}\ n}{(r\ c)\ \J{rc'}\ n} \qquad
+	\RULE{r\ \J{rc'}\ n}{(r\ \cmd{[} \arg{chars} \cmd{]})\ \J{rc'}\ n} \qquad
+	\RULE{(r\ \arg{r_1})\ \J{rc'}\ n}{(r\ \arg{r_1}^*)\ \J{rc'}\ n} \\
+	\RULE{r\ \J{rc'}\ n}{(r\ \sanchor)\ \J{rc'}\ n} \qquad
+	\RULE{r\ \J{rc'}\ n}{(r\ \eanchor)\ \J{rc'}\ n}
+\end{gather*}
+%
+The \J{replc} judgement checks the validity of backreferences in a replacement specification.
+\begin{gather*}
+	\RULE{}{\epsilon\ \J{replc}\ n} \qquad
+	\RULE{k \leq n \qquad s\ \J{replc}\ n}{(\cmd{\textbackslash} k\ s)\ \J{replc}\ n} \qquad
+	\RULE{c\ \J{char} \qquad s\ \J{replc}\ n}{(c\ s)\ \J{replc}\ n} \qquad
+	\RULE{s\ \J{replc}\ n}{(\cmd{\&}\ s)\ \J{replc}\ n}
 \end{gather*}
 
 
