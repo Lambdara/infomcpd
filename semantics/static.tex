@@ -83,16 +83,24 @@ A program is y-correct if for each \cmd{y}-instruction in the program, the patte
 \end{gather*}
 %
 A program is regex-correct if each address regular expression is regex-correct' (with any number of capture groups) and each \cmd{s} command is \textbf{s}-\textbf{c}orrect.
+Regexen in addresses are checked via the \J{ac} judgement.
 \begin{gather*}
 	\RULE{}{\epsilon\ \J{rc}} \qquad
-	\RULE{\arg{a_1}\ \J{rc'}\ \arg{n} \qquad (\arg{fun}\ \arg{s})\ \J{rc}}{(\angles{\arg{a_1}, (\cmd{!},)^?, \arg{fun}}\ s)\ \J{rc}} \qquad
-	\RULE{\arg{a_1}\ \J{rc'}\ \arg{n} \qquad \arg{a_2}\ \J{rc'}\ \arg{m} \qquad (\arg{fun}\ s)\ \J{rc}}{(\angles{\arg{a_1}, \arg{a_2}, (\cmd{!},)^?, \arg{fun}}\ s)\ \J{rc}} \\
+	\RULE{\arg{a_1}\ \J{ac}\ \arg{n} \qquad (\arg{fun}\ \arg{s})\ \J{rc}}{(\angles{\arg{a_1}, (\cmd{!},)^?, \arg{fun}}\ s)\ \J{rc}} \qquad
+	\RULE{\arg{a_1}\ \J{ac}\ \arg{n} \qquad \arg{a_2}\ \J{ac}\ \arg{m} \qquad (\arg{fun}\ s)\ \J{rc}}{(\angles{\arg{a_1}, \arg{a_2}, (\cmd{!},)^?, \arg{fun}}\ s)\ \J{rc}} \\
 	\RULE{(\cmd{s}\ \arg{reg}\ \arg{repl}\ \arg{flags})\ \J{sc} \qquad s\ \J{rc}}{((\cmd{s}\ \arg{reg}\ \arg{repl}\ \arg{flags})\ \arg{s})\ \J{rc}} \qquad
 	\RULE{s\ \J{rc}}{(\text{\underline{anything else}}\ s)\ \J{rc}}
 \end{gather*}
 The element ``$(\cmd{!},)^?$'' should be understood to be an optional ``\cmd{!},''; i.e.\ those rules matches both negated and non-negated addresses.
 The ``\underline{anything else}'' should be understood to match anything that is not a command with an address or an \cmd{s} command.
-
+%
+An address is correct if the possible regex contained in it is correct.
+\begin{gather*}
+	\RULE{\arg{n} \in \mathbb{Z}}{\arg{n}\ \J{ac}} \qquad
+	\RULE{}{\cmd{\$}\ \J{ac}} \qquad
+	\RULE{\arg{reg}\ \J{rc'}}{\cmd{/}\arg{reg}\cmd{/}\ \J{ac}}
+\end{gather*}
+%
 An \cmd{s} command is s-correct if its regular expression is regex-correct' and the backreferences in its replacement only refer to existing capture groups.
 The \J{rc'} judgement checks regex integrity and returns the number of capture groups, which the \J{replc} (\textbf{repl}acement-\textbf{c}orrect) judgement uses to verify the replacement.
 \begin{gather*}
