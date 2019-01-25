@@ -40,6 +40,7 @@ data BaseAddr = ALine Int | AEnd | ARegex Regex
   deriving (Show, Eq)
 
 data Regex = RegChar Char
+           | RegAny
            | RegBackref Int
            | RegClass Bool [RegClassItem]
            | RegAnchorLeft
