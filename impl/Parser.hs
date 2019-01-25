@@ -211,13 +211,11 @@ pStringTill delim = do
     (>:) = liftM2 (:)
 
 pSFlags :: Parser SFlags
-pSFlags = SFlags <$> many pSFlag
-
-pSFlag :: Parser SFlag
-pSFlag = choice
-    [ char 'g' >> return SGlob
-    , char 'p' >> return SPrint
-    , SNth . read <$> many1 (satisfy isDigit) ]
+pSFlags = choice
+    [ char 'g' >> pSFlags >>= \f -> return $ f { sfGlob = True }
+    , char 'p' >> pSFlags >>= \f -> return $ f { sfPrint = True }
+    , many1 digit >>= \n -> pSFlags >>= \f -> return $ f { sfNth = Just (read n) }
+    , return (SFlags Nothing False False) ]
 
 pWhiteSeparator :: Parser ()
 pWhiteSeparator = pWhitespace >> pSeparator

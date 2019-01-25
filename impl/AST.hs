@@ -60,8 +60,5 @@ data RegReplItem = RRChar Char | RRBackref Int
 data RegClassItem = RCChar Char | RCRange Char Char
   deriving (Show, Eq)
 
-data SFlags = SFlags [SFlag]
-  deriving (Show, Eq)
-
-data SFlag = SNth Int | SGlob | SPrint
+data SFlags = SFlags { sfNth :: Maybe Int, sfGlob :: Bool, sfPrint :: Bool }
   deriving (Show, Eq)
