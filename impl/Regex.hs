@@ -24,12 +24,19 @@ regtry reg str pre groups =
 regpp :: Regex -> Int -> (Regex, Int)
 regpp (RegConcat []) n = (RegConcat [], n)
 regpp (RegConcat (RegGroup r1 _ : rs)) n = (RegConcat (RegGroup r1' (n+1) : rs'),m')
-  where (RegConcat rs', m') = regpp (RegConcat rs) m
-        (r1',m) = regpp r1 (n+1)
+  where (r1',m) = regpp r1 (n+1)
+        (RegConcat rs', m') = regpp (RegConcat rs) m
+regpp (RegConcat (RegStar r1 : rs)) n = (RegConcat (RegStar r1' : rs'), n'')
+  where (r1',n') = regpp r1 n
+        (RegConcat rs', n'') = regpp (RegConcat rs) n'
+regpp (RegConcat (RegRep r1 k1 k2 : rs)) n = (RegConcat (RegRep r1' k1 k2 : rs'), n'')
+  where (r1',n') = regpp r1 n
+        (RegConcat rs', n'') = regpp (RegConcat rs) n'
 regpp (RegConcat (RegConcat rs1 : rs)) n = regpp (RegConcat (rs1 ++ rs)) n
 regpp (RegConcat (x:rs)) n = (RegConcat (x:rs'), n')
   where (RegConcat rs', n') = regpp (RegConcat rs) n
-regpp _ _ = error "regpp expects RegConcat"
+regpp ritem n = (ritem', n')
+  where (RegConcat [ritem'], n') = regpp (RegConcat [ritem]) n
 
 r :: Regex -> String -> Bool -> [String] -> Maybe (String, String, [String])
 r (RegConcat []) s _ groups = Just (s,"",groups)
