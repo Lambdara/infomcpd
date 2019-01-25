@@ -128,8 +128,8 @@ pText = do
     void $ lookAhead finalTerm
     return $ intercalate "\n" lns
 
-pSArgs :: Parser (Regex, String)
-pSArgs = pDelimitedPair pRegexTill pStringTill
+pSArgs :: Parser (Regex, RegRepl)
+pSArgs = pDelimitedPair pRegexTill pRegReplTill
 
 pYArgs :: Parser (String, String)
 pYArgs = pDelimitedPair pStringTill pStringTill
@@ -151,18 +151,20 @@ pStrictDelimited p = do
     return a
 
 pRegexTill :: Char -> Parser Regex
-pRegexTill delim = pRegConcat (char delim)
+pRegexTill delim = pRegConcat (lookAhead $ char delim)
   where
     pRegConcat :: Parsec String () a -> Parsec String () Regex
     pRegConcat delimp = RegConcat <$> manyTill pSimpleRE (try delimp)
     pSimpleRE = do
         base <- pRegAnchorLeft <|> pRegAnchorRight <|>
-                pRegGroup <|> pRegBackref <|> pRegClass <|> pRegChar
+                pRegGroup <|> pRegBackref <|> pRegClass <|>
+                pRegAny <|> pRegChar
         pRegStar base <|> pRegRep base <|> return base
     pRegAnchorLeft = char '^' >> return RegAnchorLeft
     pRegAnchorRight = char '$' >> return RegAnchorRight
     pRegGroup = try (string "\\(") >> pRegConcat (string "\\)") >>= \r -> return (RegGroup r 0)
     pRegBackref = try $ char '\\' >> (RegBackref . read . pure <$> digit)
+    pRegAny = char '.' >> return RegAny
     pRegChar = RegChar <$> ((try (string "\\n") >> return '\n') <|> satisfy (/= '\\'))
     pRegStar :: Regex -> Parsec String () Regex
     pRegStar r = char '*' >> return (RegStar r)
@@ -191,6 +193,14 @@ pRegexTill delim = pRegConcat (char delim)
         b <- satisfy (/= ']')
         return $ RCRange a b
 
+pRegReplTill :: Char -> Parser RegRepl
+pRegReplTill delim = RegRepl <$> manyTill pItem (lookAhead $ char delim)
+  where
+    pItem = (try (string "\\n") >> return (RRChar '\n')) <|>
+            (char '\\' >> digit >>= \c -> return (RRBackref (read [c]))) <|>
+            (char '&' >> return (RRBackref 0)) <|>
+            (RRChar <$> anyChar)
+
 pStringTill :: Char -> Parser String
 pStringTill delim = do
     c <- lookAhead anyChar
@@ -201,13 +211,11 @@ pStringTill delim = do
     (>:) = liftM2 (:)
 
 pSFlags :: Parser SFlags
-pSFlags = SFlags <$> many pSFlag
-
-pSFlag :: Parser SFlag
-pSFlag = choice
-    [ char 'g' >> return SGlob
-    , char 'p' >> return SPrint
-    , SNth . read <$> many1 (satisfy isDigit) ]
+pSFlags = choice
+    [ char 'g' >> pSFlags >>= \f -> return $ f { sfGlob = True }
+    , char 'p' >> pSFlags >>= \f -> return $ f { sfPrint = True }
+    , many1 digit >>= \n -> pSFlags >>= \f -> return $ f { sfNth = Just (read n) }
+    , return (SFlags Nothing False False) ]
 
 pWhiteSeparator :: Parser ()
 pWhiteSeparator = pWhitespace >> pSeparator

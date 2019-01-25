@@ -29,7 +29,7 @@ data Fun = Block [Cmd]
          | Append String
          | Insert String
          | Change String
-         | Subst Regex String SFlags
+         | Subst Regex RegRepl SFlags
          | Trans String String
   deriving (Show, Eq)
 
@@ -40,6 +40,7 @@ data BaseAddr = ALine Int | AEnd | ARegex Regex
   deriving (Show, Eq)
 
 data Regex = RegChar Char
+           | RegAny
            | RegBackref Int
            | RegClass Bool [RegClassItem]
            | RegAnchorLeft
@@ -50,11 +51,14 @@ data Regex = RegChar Char
            | RegRep Regex Int (Maybe Int)
   deriving (Show, Eq)
 
+newtype RegRepl = RegRepl [RegReplItem]
+  deriving (Show, Eq)
+
+data RegReplItem = RRChar Char | RRBackref Int
+  deriving (Show, Eq)
+
 data RegClassItem = RCChar Char | RCRange Char Char
   deriving (Show, Eq)
 
-data SFlags = SFlags [SFlag]
-  deriving (Show, Eq)
-
-data SFlag = SNth Int | SGlob | SPrint
+data SFlags = SFlags { sfNth :: Maybe Int, sfGlob :: Bool, sfPrint :: Bool }
   deriving (Show, Eq)
