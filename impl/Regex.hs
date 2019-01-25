@@ -30,6 +30,7 @@ regpp (RegConcat []) n = (RegConcat [], n)
 regpp (RegConcat (RegGroup r1 _ : rs)) n = (RegConcat (RegGroup r1' (n+1) : r'),m')
   where (RegConcat r', m') = regpp (RegConcat rs) m
         (r1',m) = regpp r1 (n+1)
+regpp (RegConcat (RegConcat rs1 : rs)) n = regpp (RegConcat (rs1 ++ rs)) n
 regpp (RegConcat (x:rs)) n = (RegConcat (x:r'), n')
   where (RegConcat r', n') = regpp (RegConcat rs) n
 regpp _ _ = error "regpp expects RegConcat"
