@@ -1,7 +1,6 @@
 module Regex where
 
 import AST
-import Text.Parsec
 
 type CapGroups = [Maybe String]
 
