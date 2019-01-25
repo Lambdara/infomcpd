@@ -157,12 +157,14 @@ pRegexTill delim = pRegConcat (lookAhead $ char delim)
     pRegConcat delimp = RegConcat <$> manyTill pSimpleRE (try delimp)
     pSimpleRE = do
         base <- pRegAnchorLeft <|> pRegAnchorRight <|>
-                pRegGroup <|> pRegBackref <|> pRegClass <|> pRegChar
+                pRegGroup <|> pRegBackref <|> pRegClass <|>
+                pRegAny <|> pRegChar
         pRegStar base <|> pRegRep base <|> return base
     pRegAnchorLeft = char '^' >> return RegAnchorLeft
     pRegAnchorRight = char '$' >> return RegAnchorRight
     pRegGroup = try (string "\\(") >> pRegConcat (string "\\)") >>= \r -> return (RegGroup r 0)
     pRegBackref = try $ char '\\' >> (RegBackref . read . pure <$> digit)
+    pRegAny = char '.' >> return RegAny
     pRegChar = RegChar <$> ((try (string "\\n") >> return '\n') <|> satisfy (/= '\\'))
     pRegStar :: Regex -> Parsec String () Regex
     pRegStar r = char '*' >> return (RegStar r)
