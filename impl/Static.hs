@@ -1,8 +1,14 @@
+{-# LANGUAGE LambdaCase #-}
 module Static(ok) where
+
+import Control.Monad
+import Data.Maybe
+
 import AST
 
+
 ok :: Program -> Bool
-ok program = labelCorrect program && yCorrect program
+ok program = all ($ program) [labelCorrect, yCorrect, rCorrect]
 
 yCorrect :: Program -> Bool
 yCorrect (Program []) = True
@@ -46,4 +52,50 @@ getLabels (Program (Cmd _ (Label label) : cmds)) = do
 getLabels (Program (Cmd _ (Block cmds1) : cmds2)) = getLabels (Program (cmds1 ++ cmds2))
 getLabels (Program (_ : cmds)) = getLabels (Program cmds)
 
--- vim: sw=2 et:
+rCorrect :: Program -> Bool
+rCorrect (Program []) = True
+rCorrect (Program (Cmd (Addr1 _ a1) fun : cmds)) =
+    aCorrect a1 && rCorrect (Program (Cmd NoAddr fun : cmds))
+rCorrect (Program (Cmd (Addr2 _ a1 a2) fun : cmds)) =
+    aCorrect a1 && aCorrect a2 && rCorrect (Program (Cmd NoAddr fun : cmds))
+rCorrect (Program (Cmd NoAddr (Subst reg repl flags) : cmds)) =
+    sCorrect reg repl flags && rCorrect (Program cmds)
+rCorrect (Program (Cmd NoAddr _ : cmds)) =
+    rCorrect (Program cmds)
+
+aCorrect :: BaseAddr -> Bool
+aCorrect (ALine _) = True
+aCorrect AEnd = True
+aCorrect (ARegex reg) = isJust (rCorrect' reg)
+
+rCorrect' :: Regex -> Maybe Int
+rCorrect' (RegConcat topregs) = go (reverse topregs)
+  where
+    go [] = Just 0
+    go (RegBackref k : rs) = do
+        n <- go rs
+        guard (k <= n)
+        return n
+    go (RegGroup r1 _ : rs) = fmap succ $ go (r1 : rs)
+    go (RegRep r1 k1 k2 : rs) =
+        guard (k1 <= fromMaybe k1 k2) >> go (r1 : rs)
+    go (RegAny : rs) = go rs
+    go (RegChar _ : rs) = go rs
+    go (RegClass _ _ : rs) = go rs
+    go (RegStar r1 : rs) = go (r1 : rs)
+    go (RegAnchorLeft : rs) = go rs
+    go (RegAnchorRight : rs) = go rs
+    go (RegConcat rs1 : rs) = go (rs1 ++ rs)
+rCorrect' r = rCorrect' (RegConcat [r])
+
+sCorrect :: Regex -> RegRepl -> SFlags -> Bool
+sCorrect reg repl _flags = case rCorrect' reg of
+    Just n -> replCorrect repl n
+    Nothing -> False
+
+replCorrect :: RegRepl -> Int -> Bool
+replCorrect (RegRepl []) _n = True
+replCorrect (RegRepl (RRBackref k : rs)) n = k <= n && replCorrect (RegRepl rs) n
+replCorrect (RegRepl (RRChar _ : rs)) n = replCorrect (RegRepl rs) n
+
+-- vim: sw=4 ts=4 et:
