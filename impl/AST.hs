@@ -39,8 +39,19 @@ data Addr = NoAddr | Addr1 Bool BaseAddr | Addr2 Bool BaseAddr BaseAddr
 data BaseAddr = ALine Int | AEnd | ARegex Regex
   deriving (Show, Eq)
 
--- TODO: refine
-type Regex = String
+data Regex = RegChar Char
+           | RegBackref Int
+           | RegClass Bool [RegClassItem]
+           | RegAnchorLeft
+           | RegAnchorRight
+           | RegConcat [Regex]
+           | RegGroup Regex Int
+           | RegStar Regex
+           | RegRep Regex Int (Maybe Int)
+  deriving (Show, Eq)
+
+data RegClassItem = RCChar Char | RCRange Char Char
+  deriving (Show, Eq)
 
 data SFlags = SFlags [SFlag]
   deriving (Show, Eq)
