@@ -3,7 +3,7 @@ version:       0.1.0
 cabal-version: >= 1.10
 build-type:    Simple
 license:       MIT
-author:        Lars Folkersma, Paul van Grol, Mark Leenen, Matej Milinkovic, Ivo Muusse, Tom Smeding
+author:        Lars Folkersma, Paul van Grol, Mark Leenen, Matej Milinkovic, Tom Smeding
 
 executable            impl
     hs-source-dirs:   .
