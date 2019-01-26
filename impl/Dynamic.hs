@@ -344,6 +344,7 @@ srepl (RegRepl (RRBackref n : rs)) groups = fromMaybe "" (groups !! n) ++ srepl 
 translate :: String -> String -> String -> String
 translate "" "" str = str
 translate (c : pat) (d : repl) str = translate pat repl (replc c d str)
+translate _ _ _ = undefined
 
 replc :: Char -> Char -> String -> String
 replc _c _d "" = ""
