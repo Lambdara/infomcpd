@@ -26,8 +26,8 @@ runFile fname nflag = do
 usage :: String
 usage = intercalate "\n"
     [ "Usage:"
-    , "  stack run sed [-n] <file.sed>  -- Interpret a sed program"
-    , "  stack run test                 -- Run all files in ../tests" ]
+    , "  stack run -- sed [-n] <file.sed>  --- Interpret a sed program"
+    , "  stack run -- test                 --- Run all files in ../tests" ]
 
 main :: IO ()
 main = do
