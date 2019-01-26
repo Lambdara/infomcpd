@@ -165,17 +165,20 @@ pRegexTill delim = pRegConcat (lookAhead $ char delim)
     pRegGroup = try (string "\\(") >> pRegConcat (string "\\)") >>= \r -> return (RegGroup r 0)
     pRegBackref = try $ char '\\' >> (RegBackref . read . pure <$> digit)
     pRegAny = char '.' >> return RegAny
-    pRegChar = RegChar <$> ((try (string "\\n") >> return '\n') <|> satisfy (/= '\\'))
+    pRegChar = RegChar <$>
+        ((try (string "\\n") >> return '\n') <|>
+         try (char '\\' >> (satisfy (not . isAlphaNum))) <|>
+         satisfy (/= '\\'))
     pRegStar :: Regex -> Parsec String () Regex
     pRegStar r = char '*' >> return (RegStar r)
     pRegRep :: Regex -> Parsec String () Regex
     pRegRep r = do
-        void $ char '{'
+        void $ try (string "\\{")
         n <- read <$> many1 digit
-        choice [char '}' >> return (RegRep r n (Just n))
-               ,char ',' >> choice [char '}' >> return (RegRep r n Nothing)
+        choice [try (string "\\}") >> return (RegRep r n (Just n))
+               ,char ',' >> choice [try (string "\\}") >> return (RegRep r n Nothing)
                                    ,do m <- read <$> many1 digit
-                                       void $ char '}'
+                                       void $ string "\\}"
                                        return (RegRep r n (Just m))]]
 
     pRegClass = do
@@ -197,6 +200,7 @@ pRegReplTill :: Char -> Parser RegRepl
 pRegReplTill delim = RegRepl <$> manyTill pItem (lookAhead $ char delim)
   where
     pItem = (try (string "\\n") >> return (RRChar '\n')) <|>
+            (try $ char '\\' >> satisfy (not . isAlphaNum) >>= \c -> return (RRChar c)) <|>
             (char '\\' >> digit >>= \c -> return (RRBackref (read [c]))) <|>
             (char '&' >> return (RRBackref 0)) <|>
             (RRChar <$> anyChar)

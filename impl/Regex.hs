@@ -1,4 +1,4 @@
-module Regex where
+module Regex(regex) where
 
 import AST
 
@@ -40,6 +40,9 @@ regpp ritem n = (ritem', n')
 
 r :: Regex -> String -> Bool -> CapGroups -> Maybe (String, String, CapGroups)
 r (RegConcat []) s _ groups = Just (s,"",groups)
+r (RegConcat (RegAny : rs)) (c:cs) _ groups = do
+    (post, match, groups') <- r (RegConcat rs) cs False groups
+    return (post, c:match, groups')
 r (RegConcat (RegChar c : rs)) (c':cs) _ groups =
   if c == c'
   then do
