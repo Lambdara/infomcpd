@@ -1,7 +1,9 @@
+{-# LANGUAGE TypeSynonymInstances, FlexibleInstances #-}
 module Dynamic(run) where
 
 import Data.List
 import Data.Maybe
+-- import Debug.Trace
 
 import AST
 import Regex
@@ -37,6 +39,35 @@ type DynCmd = Either DownArrow Cmd
 
 type IP = [Int]
 
+class Pretty a where
+    pretty :: a -> String
+
+instance Pretty Machine where
+    pretty (NextCycle s) = "NextCycle (" ++ pretty s ++ ")"
+    pretty (EndCycle s) = "EndCycle (" ++ pretty s ++ ")"
+    pretty (Exec cmds ip s) = "Exec " ++ pretty ip ++ " " ++ pretty cmds ++ " (" ++ pretty s ++ ")"
+    pretty (Find lab cmds ip _s) = "Find " ++ lab ++ " " ++ pretty cmds ++ " " ++ pretty ip ++ " ..."
+    pretty (Match a s _ _) = "Match " ++ pretty a ++ " " ++ pretty s ++ " ..."
+    pretty (Final s) = "Final " ++ s
+
+instance Pretty State where
+    pretty s = "{P=" ++ show (sPat s) ++ ", H=[" ++ show (length (sHold s)) ++ "], ...}"
+
+instance Pretty IP where
+    pretty = show
+
+instance Pretty [DynCmd] where
+    -- pretty _ = "[DynCmd]"
+    pretty l
+        | length l < 2 = "[" ++ intercalate "," (map pretty l) ++ "]"
+        | otherwise = "[" ++ intercalate "," (map pretty (take 2 l)) ++ ",...]"
+
+instance Pretty BaseAddr where
+    pretty = show
+
+instance Pretty DynCmd where
+    pretty = show
+
 -- Run a program according to the dynamic semantics
 run :: Program -> String -> Bool -> String
 run (Program cmds) input nflag = transitionLoop (NextCycle initState)
@@ -59,6 +90,8 @@ transitionLoop (Final str) = str
 transitionLoop machine = transitionLoop (smallStep machine)
 
 smallStep :: Machine -> Machine
+-- smallStep machine | trace (pretty machine) False = undefined
+-- smallStep machine | Exec _ _ _ <- machine, trace (pretty machine) False = undefined
 smallStep (NextCycle state)
   | null (sInputLines state) = Final (sOutput state ++ sAq state )
   | otherwise =
